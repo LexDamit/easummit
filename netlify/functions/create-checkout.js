@@ -55,6 +55,7 @@ exports.handler = async (event) => {
       description: `${selectedPackage.name} registration${attendeeName ? ` for ${attendeeName}` : ''}`,
       merchant_code: process.env.SUMUP_MERCHANT_CODE,
       redirect_url: `${process.env.APP_URL}?status=success&ref=${encodeURIComponent(bookingReference)}`,
+      hosted_checkout: { enabled: true },
       // TODO: Verify whether your SumUp account supports a dedicated cancel_url field for hosted checkout.
       // TODO: Confirm whether customer details can be sent in a nested customer object for your account.
       customer_email: customer?.email,
@@ -79,6 +80,7 @@ exports.handler = async (event) => {
     const checkoutUrl = getHostedCheckoutUrl(data)
 
     if (!checkoutUrl) {
+      console.error('SumUp checkout response missing hosted URL', data)
       throw new Error('Checkout was created but no hosted checkout URL was returned.')
     }
 
