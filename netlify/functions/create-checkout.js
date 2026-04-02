@@ -1,5 +1,5 @@
 const packages = {
-  coach: { id: 'coach', name: 'Coach Pass', price: 149 },
+  coach: { id: 'coach', name: 'Coach Pass', price: 1 },
   performance: { id: 'performance', name: 'Performance Pass', price: 249 },
   federation: { id: 'federation', name: 'Federation Pass', price: 499 },
 }

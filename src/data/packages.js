@@ -2,7 +2,7 @@ export const packages = [
   {
     id: 'coach',
     name: 'Coach Pass',
-    price: 149,
+    price: 1,
     description:
       'A focused registration option for individual coaches who want access to the summit core programme and networking spaces.',
     includes: [
