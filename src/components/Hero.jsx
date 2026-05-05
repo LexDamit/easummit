@@ -1,44 +1,46 @@
-function Hero({ navigate, onSelectPackage }) {
+import flaLogo from '../assets/fla-logo.svg'
+
+function Hero({ content, navigate, onSelectPackage }) {
   return (
     <section className="hero">
       <div className="shell-section">
         <div className="hero__panel">
           <div className="hero__content">
-            <div>
-              <span className="hero__eyebrow">European Athletics Coaching Summit</span>
-              <h1>Sharper coaching conversations for the next performance cycle.</h1>
-              <p className="hero__lede">
-                A fictional premium summit for coaches, technical directors, and performance staff who want a more
-                modern, practical, and collaborative approach to athletics education.
-              </p>
+            <div className="hero__main">
+              <div className="hero__brandline">
+                <img className="hero__logo" src={flaLogo} alt="FLA logo" />
+                <span className="hero__eyebrow">{content.label}</span>
+              </div>
+              <h1>{content.title}</h1>
+              <p className="hero__lede">{content.description}</p>
               <div className="hero__actions">
                 <button className="button button--primary" onClick={onSelectPackage}>
-                  View registration packages
+                  {content.primaryCta}
                 </button>
-                <button className="button button--ghost" onClick={() => navigate('home')}>
-                  Explore the summit
+                <button className="button button--ghost" onClick={() => navigate('packages')}>
+                  {content.secondaryCta}
                 </button>
               </div>
             </div>
 
             <aside className="hero__aside">
-              <div className="info-card">
-                <span className="meta-chip">Date</span>
-                <div className="meta-value">18-19 October 2026</div>
-              </div>
-              <div className="info-card">
-                <span className="meta-chip">Location</span>
-                <div className="meta-value">Lausanne, Switzerland</div>
-              </div>
-              <div className="hero__meta">
-                <div className="info-card">
-                  <span className="meta-chip">Audience</span>
-                  <div className="meta-value">Coaches and leaders</div>
+              <div className="hero-visual" aria-hidden="true">
+                <div className="hero-visual__figure hero-visual__figure--large" />
+                <div className="hero-visual__figure hero-visual__figure--small" />
+                <div className="hero-visual__tile hero-visual__tile--blue">
+                  <span />
                 </div>
-                <div className="info-card">
-                  <span className="meta-chip">Format</span>
-                  <div className="meta-value">Hosted summit + labs</div>
-                </div>
+                <div className="hero-visual__tile hero-visual__tile--sky" />
+                <div className="hero-visual__tile hero-visual__tile--dark" />
+                <div className="hero-visual__ribbon">FLA EVENT</div>
+              </div>
+              <div className="hero-stats-grid">
+                {content.stats.map((item) => (
+                  <div className="hero-stat" key={`${item.label}-${item.value}`}>
+                    <span className="meta-chip">{item.label}</span>
+                    <div className="meta-value">{item.value}</div>
+                  </div>
+                ))}
               </div>
             </aside>
           </div>

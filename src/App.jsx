@@ -1,31 +1,81 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
-import Home from './pages/Home'
-import Packages from './pages/Packages'
-import Checkout from './pages/Checkout'
+import RegistrationCheckout from './pages/RegistrationCheckout'
 import Success from './pages/Success'
 import Cancel from './pages/Cancel'
-import { packages } from './data/packages'
+import Admin from './pages/Admin'
+import { defaultRegistrationCatalog } from './data/registrationCatalog'
+import {
+  firebaseEnabled,
+  loadRegistrationCatalog,
+  saveRegistrationCatalog,
+  signInAdmin,
+  signOutAdmin,
+  subscribeRegistrations,
+  subscribeToAdminAuth,
+  updateRegistrationAdmin,
+} from './lib/firebase'
 
-const getStatusPage = () => {
+const getInitialPage = () => {
   const params = new URLSearchParams(window.location.search)
   const status = params.get('status')
 
   if (status === 'success') return 'success'
   if (status === 'cancel') return 'cancel'
 
-  return 'home'
+  return 'local'
 }
 
 function App() {
-  const [page, setPage] = useState(getStatusPage)
-  const [selectedPackage, setSelectedPackage] = useState(null)
+  const [page, setPage] = useState(getInitialPage)
+  const [catalog, setCatalog] = useState(defaultRegistrationCatalog)
+  const [adminUser, setAdminUser] = useState(null)
+  const [registrations, setRegistrations] = useState([])
+  const [catalogNotice, setCatalogNotice] = useState('')
 
-  const packageMap = useMemo(
-    () => Object.fromEntries(packages.map((item) => [item.id, item])),
-    [],
+  const variantsById = useMemo(
+    () => Object.fromEntries(catalog.variants.map((item) => [item.id, item])),
+    [catalog.variants],
   )
+
+  useEffect(() => subscribeToAdminAuth(setAdminUser), [])
+  useEffect(() => subscribeRegistrations(setRegistrations), [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadCatalog = async () => {
+      try {
+        const remoteCatalog = await loadRegistrationCatalog()
+
+        if (!cancelled && remoteCatalog?.variants?.length) {
+          setCatalog(remoteCatalog)
+        }
+      } catch (error) {
+        const message = String(error?.message || '')
+
+        if (!cancelled && message.toLowerCase().includes('offline')) {
+          setCatalogNotice(
+            'Firebase catalog unavailable right now. The app is using local fallback prices until the connection is restored.',
+          )
+          return
+        }
+
+        if (!cancelled) {
+          setCatalogNotice(
+            'Firebase catalog could not be loaded. The app is using local fallback prices.',
+          )
+        }
+      }
+    }
+
+    loadCatalog()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const navigate = (nextPage) => {
     setPage(nextPage)
@@ -39,51 +89,58 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleSelectPackage = (packageId) => {
-    setSelectedPackage(packageMap[packageId] ?? null)
-    navigate('checkout')
+  const handleSaveCatalog = async (nextCatalog) => {
+    await saveRegistrationCatalog(nextCatalog)
+    setCatalog(nextCatalog)
   }
 
   const renderPage = () => {
-    if (page === 'checkout' && !selectedPackage) {
+    if (page === 'success') {
+      return <Success navigate={navigate} />
+    }
+
+    if (page === 'cancel') {
+      return <Cancel navigate={navigate} />
+    }
+
+    if (page === 'admin') {
       return (
-        <Packages
-          packages={packages}
-          navigate={navigate}
-          onSelectPackage={handleSelectPackage}
+        <Admin
+          adminUser={adminUser}
+          catalog={catalog}
+          firebaseEnabled={firebaseEnabled}
+          onLogin={signInAdmin}
+          onLogout={signOutAdmin}
+          onSaveCatalog={handleSaveCatalog}
+          onUpdateRegistration={updateRegistrationAdmin}
+          registrations={registrations}
         />
       )
     }
 
-    switch (page) {
-      case 'packages':
-        return (
-          <Packages
-            packages={packages}
-            navigate={navigate}
-            onSelectPackage={handleSelectPackage}
-          />
-        )
-      case 'checkout':
-        return <Checkout navigate={navigate} selectedPackage={selectedPackage} />
-      case 'success':
-        return <Success navigate={navigate} />
-      case 'cancel':
-        return <Cancel navigate={navigate} />
-      case 'home':
-      default:
-        return (
-          <Home
-            navigate={navigate}
-            onSelectPackage={() => navigate('packages')}
-          />
-        )
-    }
+    const selectedVariant = variantsById[page] ?? catalog.variants[0]
+
+    return (
+      <RegistrationCheckout
+        addons={catalog.addons}
+        navigate={navigate}
+        variant={selectedVariant}
+      />
+    )
   }
 
   return (
-    <div className="site-shell">
-      <Header navigate={navigate} currentPage={page} />
+    <div className="app-shell">
+      <Header
+        currentPage={page}
+        navigate={navigate}
+        variants={catalog.variants}
+      />
+      {catalogNotice ? (
+        <div className="shell-section app-notice">
+          {catalogNotice}
+        </div>
+      ) : null}
       <main>{renderPage()}</main>
       <Footer />
     </div>

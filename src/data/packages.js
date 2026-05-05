@@ -1,42 +1,42 @@
-export const packages = [
+export const defaultPackages = [
   {
-    id: 'coach',
-    name: 'Coach Pass',
-    price: 1,
+    id: 'standard',
+    name: 'Pass Standard',
+    price: 49,
     description:
-      'A focused registration option for individual coaches who want access to the summit core programme and networking spaces.',
+      'Une formule simple pour un participant individuel avec acces au programme principal et aux informations pratiques.',
     includes: [
-      'Full two-day summit access',
-      'Keynotes, coaching labs, and networking sessions',
-      'Digital programme guide and session notes',
+      'Acces au programme officiel',
+      'Confirmation d inscription par email',
+      'Informations participants et documents utiles',
     ],
   },
   {
-    id: 'performance',
-    name: 'Performance Pass',
-    price: 249,
+    id: 'experience',
+    name: 'Pass Experience',
+    price: 89,
     description:
-      'Built for practitioners who want deeper access, premium hospitality, and additional performance-focused session formats.',
+      'Une formule enrichie pour les participants qui souhaitent davantage de confort et une experience plus complete.',
     includes: [
-      'Everything in Coach Pass',
-      'Priority seating in featured sessions',
-      'Performance roundtable access and hosted lunch',
-      'Post-event insights deck',
+      'Tout le contenu du Pass Standard',
+      'Accueil prioritaire',
+      'Option ideale pour futurs extras configurables',
     ],
   },
   {
-    id: 'federation',
-    name: 'Federation Pass',
-    price: 499,
+    id: 'delegation',
+    name: 'Pass Delegation',
+    price: 149,
     description:
-      'A senior-level package for federation leaders, pathway directors, and heads of performance attending with strategic intent.',
+      'Une formule orientee organisation, delegation ou institution avec un niveau de service plus encadre.',
     includes: [
-      'Everything in Performance Pass',
-      'Invitation-only leadership breakfast',
-      'Federation strategy forum access',
-      'Concierge registration support',
+      'Tout le contenu du Pass Experience',
+      'Traitement dedie pour groupes et delegations',
+      'Base compatible avec modules ou options admin',
     ],
   },
 ]
 
-export const packageMap = Object.fromEntries(packages.map((item) => [item.id, item]))
+export const packageMap = Object.fromEntries(
+  defaultPackages.map((item) => [item.id, item]),
+)

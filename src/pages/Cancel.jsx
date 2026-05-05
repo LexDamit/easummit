@@ -1,20 +1,17 @@
 function Cancel({ navigate }) {
   return (
     <div className="page">
-      <section className="section">
-        <div className="shell-section">
-          <div className="status-card">
-            <div className="status-card__badge status-card__badge--cancel">!</div>
-            <h1>Payment was not completed.</h1>
-            <p>
-              Your registration has not been confirmed yet. You can return to the packages page, choose your pass again,
-              and restart the hosted payment flow whenever you&apos;re ready.
-            </p>
-            <div className="cta-row" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
-              <button className="button button--primary" onClick={() => navigate('packages')}>
-                Return to packages
-              </button>
-            </div>
+      <section className="shell-section ticket-page">
+        <div className="ticket-summary-card">
+          <span className="section-chip">Payment cancelled</span>
+          <h1 className="checkout-title">The payment was not completed.</h1>
+          <p className="checkout-copy">
+            The registration is still incomplete. You can return to one of the registration pages and try again.
+          </p>
+          <div className="cta-row">
+            <button className="button button--primary" onClick={() => navigate('local')}>
+              Back to registrations
+            </button>
           </div>
         </div>
       </section>
