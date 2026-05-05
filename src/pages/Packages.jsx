@@ -1,17 +1,14 @@
 import PackageCard from '../components/PackageCard'
 
-function Packages({ packages, navigate, onSelectPackage }) {
+function Packages({ content, packages, navigate, onSelectPackage }) {
   return (
     <div className="page">
       <section className="section">
         <div className="shell-section section-stack">
-          <div>
-            <span className="section-label">Packages</span>
-            <h1 className="page-title">Choose the registration package that matches your coaching role.</h1>
-            <p className="page-intro">
-              Every pass includes access to the hosted payment flow after you complete the attendee form. No account creation,
-              no database setup, and no frontend pricing trust.
-            </p>
+          <div className="section-intro">
+            <span className="section-label">{content.label}</span>
+            <h1 className="page-title">{content.title}</h1>
+            <p className="page-intro">{content.intro}</p>
           </div>
 
           <div className="packages-grid">
@@ -25,8 +22,8 @@ function Packages({ packages, navigate, onSelectPackage }) {
           </div>
 
           <div className="cta-row">
-            <button className="button button--secondary" onClick={() => navigate('home')}>
-              Back to home
+            <button className="button button--ghost" onClick={() => navigate('home')}>
+              {content.backLabel}
             </button>
           </div>
         </div>

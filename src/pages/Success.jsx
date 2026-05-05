@@ -1,20 +1,143 @@
+import { useEffect, useMemo, useState } from 'react'
+import QRCode from 'qrcode'
+
+const readJsonSafely = async (response) => {
+  const rawText = await response.text()
+
+  if (!rawText) {
+    return {}
+  }
+
+  try {
+    return JSON.parse(rawText)
+  } catch {
+    return {
+      error: rawText.slice(0, 200) || 'Unexpected non-JSON response received.',
+    }
+  }
+}
+
+const getFunctionErrorMessage = (response, data, fallbackMessage) => {
+  if (response.status === 404) {
+    return 'Netlify Functions are not available on this dev server. Run the app with `netlify dev` instead of plain `vite`.'
+  }
+
+  return data.error || fallbackMessage
+}
+
 function Success({ navigate }) {
+  const [registration, setRegistration] = useState(null)
+  const [qrCode, setQrCode] = useState('')
+  const [error, setError] = useState('')
+  const reference = useMemo(() => new URLSearchParams(window.location.search).get('ref'), [])
+
+  useEffect(() => {
+    const loadRegistration = async () => {
+      if (!reference) {
+        setError('Missing booking reference.')
+        return
+      }
+
+      try {
+        const response = await fetch(`/.netlify/functions/get-registration?ref=${encodeURIComponent(reference)}`)
+        const data = await readJsonSafely(response)
+
+        if (!response.ok) {
+          throw new Error(
+            getFunctionErrorMessage(response, data, 'Unable to load registration.'),
+          )
+        }
+
+        setRegistration(data.registration)
+        const qr = await QRCode.toDataURL(
+          JSON.stringify({
+            ref: data.registration.bookingReference,
+            name: `${data.registration.customer.firstName} ${data.registration.customer.lastName}`,
+          }),
+        )
+        setQrCode(qr)
+      } catch (loadError) {
+        setError(loadError.message || 'Unable to load registration.')
+      }
+    }
+
+    loadRegistration()
+  }, [reference])
+
+  if (error) {
+    return (
+      <div className="page">
+        <section className="shell-section ticket-page">
+          <div className="error-box">{error}</div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!registration) {
+    return (
+      <div className="page">
+        <section className="shell-section ticket-page">
+          <p className="checkout-copy">Loading order summary...</p>
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="page">
-      <section className="section">
-        <div className="shell-section">
-          <div className="status-card">
-            <div className="status-card__badge status-card__badge--success">OK</div>
-            <h1>Thank you for your registration.</h1>
-            <p>
-              Your payment flow has been completed. Final confirmation still depends on successful payment processing,
-              and the summit team will follow up if anything needs attention on your booking.
-            </p>
-            <div className="cta-row" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
-              <button className="button button--primary" onClick={() => navigate('home')}>
-                Return to home
-              </button>
+      <section className="shell-section ticket-page">
+        <div className="ticket-summary-card">
+          <span className="section-chip">Order summary</span>
+          <h1 className="checkout-title">Your registration has been created.</h1>
+          <p className="checkout-copy">
+            Payment return received. Final payment confirmation can still be verified by the team.
+          </p>
+
+          <div className="summary-line">
+            <span>Reference</span>
+            <strong>{registration.bookingReference}</strong>
+          </div>
+          <div className="summary-line">
+            <span>Participant</span>
+            <strong>{registration.customer.firstName} {registration.customer.lastName}</strong>
+          </div>
+          <div className="summary-line">
+            <span>Category</span>
+            <strong>{registration.variantName}</strong>
+          </div>
+          <div className="summary-line">
+            <span>Total</span>
+            <strong>EUR {registration.totalAmount}</strong>
+          </div>
+
+          <div className="ticket-card">
+            <div>
+              <span className="section-chip">Official ticket</span>
+              <h2>{registration.customer.firstName} {registration.customer.lastName}</h2>
+              <p>{registration.customer.email}</p>
+              <p>{registration.customer.country}</p>
+              <p>{registration.variantName}</p>
+              <p>Show this QR code on arrival.</p>
             </div>
+            {qrCode ? <img className="ticket-card__qr" src={qrCode} alt="Ticket QR code" /> : null}
+          </div>
+
+          {registration.addons?.length ? (
+            <div className="ticket-addons">
+              <h3>Add-ons</h3>
+              <ul className="bullet-list">
+                {registration.addons.map((item) => (
+                  <li key={item.id}>{item.name} - EUR {item.price}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="cta-row">
+            <button className="button button--primary" onClick={() => navigate('local')}>
+              New registration
+            </button>
           </div>
         </div>
       </section>

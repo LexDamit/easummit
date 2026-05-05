@@ -20,7 +20,10 @@
         "npm:eslint-plugin-react-hooks@^7.0.1",
         "npm:eslint-plugin-react-refresh@~0.5.2",
         "npm:eslint@^9.39.4",
+        "npm:firebase-admin@^13.7.0",
+        "npm:firebase@^12.11.0",
         "npm:globals@^17.4.0",
+        "npm:qrcode@^1.5.4",
         "npm:react-dom@^19.2.4",
         "npm:react@^19.2.4",
         "npm:vite@^8.0.1"
