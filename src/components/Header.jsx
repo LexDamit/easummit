@@ -22,12 +22,6 @@ function Header({ currentPage, navigate, variants }) {
               {item.pageLabel}
             </button>
           ))}
-          <button
-            className={`nav-link ${currentPage === 'admin' ? 'is-active' : ''}`}
-            onClick={() => navigate('admin')}
-          >
-            Admin
-          </button>
         </nav>
       </div>
     </header>

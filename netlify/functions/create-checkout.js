@@ -6,35 +6,99 @@ const fallbackCatalog = {
     {
       id: 'local',
       pageLabel: 'Local',
-      title: 'Local registration',
-      description: 'Conference access for local participants.',
-      baseItemName: 'Conference Access',
-      price: 120,
+      title: 'Local participants',
+      description:
+        'The packages below are reserved for participants from Luxembourg who hold an FLA or INAPS licence. All packages include full conference access, coffee breaks and lunch on Saturday.',
+      packageOptions: [
+        {
+          id: 'single',
+          name: 'Base package 1 person',
+          participantCount: 1,
+          baseItemName: 'Conference Access',
+          baseDescription:
+            'Includes full conference access, coffee breaks and lunch on Saturday.',
+          price: 62,
+        },
+        {
+          id: 'double',
+          name: 'Base package 2 people',
+          participantCount: 2,
+          baseItemName: 'Conference Access',
+          baseDescription:
+            'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
+          price: 124,
+        },
+      ],
     },
     {
       id: 'partners',
       pageLabel: 'Partners',
-      title: 'Partners registration',
-      description: 'Conference access for partners and invited guests.',
-      baseItemName: 'Conference Access',
-      price: 220,
+      title: 'Partners',
+      description:
+        'Packages for partner delegates. All packages include full conference access, coffee breaks and lunch on Saturday.',
+      packageOptions: [
+        {
+          id: 'single',
+          name: 'Base package 1 person',
+          participantCount: 1,
+          baseItemName: 'Conference Access',
+          baseDescription:
+            'Includes full conference access, coffee breaks and lunch on Saturday.',
+          price: 130,
+        },
+        {
+          id: 'double',
+          name: 'Base package 2 people',
+          participantCount: 2,
+          baseItemName: 'Conference Access',
+          baseDescription:
+            'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
+          price: 260,
+        },
+      ],
     },
     {
       id: 'international',
       pageLabel: 'International',
-      title: 'International registration',
-      description: 'Conference access for international delegates.',
-      baseItemName: 'Conference Access',
-      price: 320,
+      title: 'International',
+      description:
+        'Packages for international participants. All packages include full conference access, coffee breaks and lunch on Saturday.',
+      packageOptions: [
+        {
+          id: 'single',
+          name: 'Base package 1 person',
+          participantCount: 1,
+          baseItemName: 'Conference Access',
+          baseDescription:
+            'Includes full conference access, coffee breaks and lunch on Saturday.',
+          price: 240,
+        },
+        {
+          id: 'double',
+          name: 'Base package 2 people',
+          participantCount: 2,
+          baseItemName: 'Conference Access',
+          baseDescription:
+            'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
+          price: 480,
+        },
+      ],
     },
   ],
-  addons: [
-    { id: 'networking-dinner', name: 'Networking Dinner', price: 75 },
-    { id: 'single-10-11', name: 'Accommodation Single 10-11.10.2026', price: 160 },
-    { id: 'single-11-12', name: 'Accommodation Single 11-12.10.2026', price: 160 },
-    { id: 'double-10-11', name: 'Accommodation Double 10-11.10.2026', price: 115 },
-    { id: 'double-11-12', name: 'Accommodation Double 11-12.10.2026', price: 115 },
-  ],
+  addonsByPackage: {
+    single: [
+      { id: 'networking-dinner', name: 'Networking dinner (Saturday evening)', price: 60 },
+      { id: 'hotel-09-10', name: 'Hotel stay 1 night (09-10 October)', price: 130 },
+      { id: 'hotel-10-11', name: 'Hotel stay 1 night (10-11 October)', price: 130 },
+      { id: 'hotel-09-11', name: 'Hotel stay 2 nights (09-11 October)', price: 260 },
+    ],
+    double: [
+      { id: 'networking-dinner', name: 'Networking dinner (Saturday evening)', price: 120 },
+      { id: 'hotel-09-10', name: 'Hotel stay 1 night (09-10 October)', price: 150 },
+      { id: 'hotel-10-11', name: 'Hotel stay 1 night (10-11 October)', price: 150 },
+      { id: 'hotel-09-11', name: 'Hotel stay 2 nights (09-11 October)', price: 300 },
+    ],
+  },
 }
 
 const getHostedCheckoutUrl = (payload) => {
@@ -97,6 +161,18 @@ const loadTrustedCatalog = async () => {
   }
 }
 
+const validateParticipants = (participants, participantCount) => {
+  if (!Array.isArray(participants) || participants.length !== participantCount) {
+    return false
+  }
+
+  return participants.every((participant) =>
+    ['firstName', 'lastName', 'email', 'country', 'memberFederation', 'role', 'gender'].every(
+      (field) => String(participant?.[field] || '').trim(),
+    ),
+  )
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -107,11 +183,20 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { variantId, addonIds = [], customer } = JSON.parse(event.body || '{}')
+    const {
+      variantId,
+      packageType = 'single',
+      addonIds = [],
+      participants = [],
+    } = JSON.parse(event.body || '{}')
+
     const catalog = await loadTrustedCatalog()
     const variant = catalog.variants.find((item) => item.id === variantId)
+    const selectedPackage = variant?.packageOptions?.find(
+      (item) => item.id === packageType,
+    )
 
-    if (!variant) {
+    if (!variant || !selectedPackage) {
       return {
         statusCode: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -119,9 +204,24 @@ exports.handler = async (event) => {
       }
     }
 
-    const addons = catalog.addons.filter((item) => addonIds.includes(item.id))
+    const participantCount = Number(selectedPackage.participantCount || 1)
+    const sanitizedParticipants = Array.isArray(participants)
+      ? participants.slice(0, participantCount)
+      : []
+
+    if (!validateParticipants(sanitizedParticipants, participantCount)) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Participant information is incomplete.' }),
+      }
+    }
+
+    const availableAddons = catalog.addonsByPackage?.[packageType] ?? []
+    const addons = availableAddons.filter((item) => addonIds.includes(item.id))
     const totalAmount =
-      Number(variant.price) + addons.reduce((sum, item) => sum + Number(item.price || 0), 0)
+      Number(selectedPackage.price) +
+      addons.reduce((sum, item) => sum + Number(item.price || 0), 0)
 
     if (
       !process.env.SUMUP_API_KEY ||
@@ -133,20 +233,32 @@ exports.handler = async (event) => {
 
     const bookingReference = `FLA-${Date.now()}`
     const db = getAdminDb()
+    const primaryParticipant = sanitizedParticipants[0] || {}
+    const attendeeName = [
+      primaryParticipant.firstName,
+      primaryParticipant.lastName,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
 
     if (db) {
       await db.collection('registrations').doc(bookingReference).set({
         bookingReference,
         variantId: variant.id,
         variantName: variant.title,
+        packageType,
+        packageName: selectedPackage.name,
+        participantCount,
         baseItem: {
-          name: variant.baseItemName,
-          price: Number(variant.price),
+          name: selectedPackage.baseItemName,
+          price: Number(selectedPackage.price),
         },
         addons,
         totalAmount,
         currency: 'EUR',
-        customer,
+        participants: sanitizedParticipants,
+        primaryParticipant,
         paymentStatus: 'pending',
         paymentStage: 'checkout_created',
         hotelRoom: '',
@@ -156,16 +268,17 @@ exports.handler = async (event) => {
       })
     }
 
-    const attendeeName = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim()
     const payload = {
       checkout_reference: bookingReference,
       amount: totalAmount,
       currency: 'EUR',
-      description: `${variant.title}${attendeeName ? ` for ${attendeeName}` : ''}`,
+      description: `${variant.title} - ${selectedPackage.name}${attendeeName ? ` for ${attendeeName}` : ''}`,
       merchant_code: process.env.SUMUP_MERCHANT_CODE,
-      redirect_url: `${process.env.APP_URL}?status=success&ref=${encodeURIComponent(bookingReference)}`,
+      redirect_url: `${process.env.APP_URL}?status=success&ref=${encodeURIComponent(
+        bookingReference,
+      )}`,
       hosted_checkout: { enabled: true },
-      customer_email: customer?.email,
+      customer_email: primaryParticipant.email,
       customer_name: attendeeName || undefined,
     }
 

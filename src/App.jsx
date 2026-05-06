@@ -122,7 +122,7 @@ function App() {
 
     return (
       <RegistrationCheckout
-        addons={catalog.addons}
+        addonsByPackage={catalog.addonsByPackage ?? {}}
         navigate={navigate}
         variant={selectedVariant}
       />
@@ -142,7 +142,7 @@ function App() {
         </div>
       ) : null}
       <main>{renderPage()}</main>
-      <Footer />
+      <Footer navigate={navigate} />
     </div>
   )
 }

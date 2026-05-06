@@ -538,6 +538,19 @@ textarea {
   padding: 1.5rem 0 2.5rem;
 }
 
+.text-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  color: var(--accent-dark);
+}
+
 @media (max-width: 1080px) {
   .checkout-grid,
   .admin-layout {

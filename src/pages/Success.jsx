@@ -30,6 +30,11 @@ function Success({ navigate }) {
   const [qrCode, setQrCode] = useState('')
   const [error, setError] = useState('')
   const reference = useMemo(() => new URLSearchParams(window.location.search).get('ref'), [])
+  const leadParticipant =
+    registration?.primaryParticipant ??
+    registration?.participants?.[0] ??
+    registration?.customer ??
+    null
 
   useEffect(() => {
     const loadRegistration = async () => {
@@ -52,7 +57,7 @@ function Success({ navigate }) {
         const qr = await QRCode.toDataURL(
           JSON.stringify({
             ref: data.registration.bookingReference,
-            name: `${data.registration.customer.firstName} ${data.registration.customer.lastName}`,
+            name: `${data.registration.primaryParticipant?.firstName || ''} ${data.registration.primaryParticipant?.lastName || ''}`.trim(),
           }),
         )
         setQrCode(qr)
@@ -100,11 +105,15 @@ function Success({ navigate }) {
           </div>
           <div className="summary-line">
             <span>Participant</span>
-            <strong>{registration.customer.firstName} {registration.customer.lastName}</strong>
+            <strong>{leadParticipant?.firstName} {leadParticipant?.lastName}</strong>
           </div>
           <div className="summary-line">
             <span>Category</span>
             <strong>{registration.variantName}</strong>
+          </div>
+          <div className="summary-line">
+            <span>Package</span>
+            <strong>{registration.packageName}</strong>
           </div>
           <div className="summary-line">
             <span>Total</span>
@@ -114,14 +123,27 @@ function Success({ navigate }) {
           <div className="ticket-card">
             <div>
               <span className="section-chip">Official ticket</span>
-              <h2>{registration.customer.firstName} {registration.customer.lastName}</h2>
-              <p>{registration.customer.email}</p>
-              <p>{registration.customer.country}</p>
-              <p>{registration.variantName}</p>
+              <h2>{leadParticipant?.firstName} {leadParticipant?.lastName}</h2>
+              <p>{leadParticipant?.email}</p>
+              <p>{leadParticipant?.country}</p>
+              <p>{registration.variantName} · {registration.packageName}</p>
               <p>Show this QR code on arrival.</p>
             </div>
             {qrCode ? <img className="ticket-card__qr" src={qrCode} alt="Ticket QR code" /> : null}
           </div>
+
+          {registration.participants?.length > 1 ? (
+            <div className="ticket-addons">
+              <h3>Participants</h3>
+              <ul className="bullet-list">
+                {registration.participants.map((participant, index) => (
+                  <li key={`${registration.bookingReference}-participant-${index}`}>
+                    Participant {index + 1}: {participant.firstName} {participant.lastName} - {participant.email}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {registration.addons?.length ? (
             <div className="ticket-addons">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-const initialForm = {
+const initialParticipant = {
   firstName: '',
   lastName: '',
   email: '',
@@ -36,24 +36,52 @@ const getFunctionErrorMessage = (response, data, fallbackMessage) => {
   return data.error || fallbackMessage
 }
 
-function RegistrationCheckout({ addons, navigate, variant }) {
-  const [formData, setFormData] = useState(initialForm)
+function RegistrationCheckout({ variant, addonsByPackage }) {
+  const [packageType, setPackageType] = useState('single')
+  const [participants, setParticipants] = useState([initialParticipant, initialParticipant])
   const [selectedAddons, setSelectedAddons] = useState([])
   const [errors, setErrors] = useState({})
   const [requestError, setRequestError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
+  const packageOptions = variant.packageOptions || []
+  const selectedPackage =
+    packageOptions.find((item) => item.id === packageType) || packageOptions[0]
+  const activeAddons = useMemo(
+    () => addonsByPackage[packageType] || [],
+    [addonsByPackage, packageType],
+  )
+
   const selectedAddonObjects = useMemo(
-    () => addons.filter((item) => selectedAddons.includes(item.id)),
-    [addons, selectedAddons],
+    () => activeAddons.filter((item) => selectedAddons.includes(item.id)),
+    [activeAddons, selectedAddons],
   )
 
   const totalAmount = useMemo(
     () =>
-      variant.price +
+      Number(selectedPackage?.price || 0) +
       selectedAddonObjects.reduce((sum, item) => sum + Number(item.price || 0), 0),
-    [selectedAddonObjects, variant.price],
+    [selectedAddonObjects, selectedPackage],
   )
+
+  const participantCount = selectedPackage?.participantCount || 1
+
+  const handleParticipantChange = (index, event) => {
+    const { name, value } = event.target
+
+    setParticipants((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [name]: value } : item,
+      ),
+    )
+
+    setErrors((current) => ({ ...current, [`${name}-${index}`]: '' }))
+  }
+
+  const handlePackageChange = (nextPackageType) => {
+    setPackageType(nextPackageType)
+    setSelectedAddons([])
+  }
 
   const toggleAddon = (addonId) => {
     setSelectedAddons((current) =>
@@ -63,23 +91,23 @@ function RegistrationCheckout({ addons, navigate, variant }) {
     )
   }
 
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setFormData((current) => ({ ...current, [name]: value }))
-    setErrors((current) => ({ ...current, [name]: '' }))
+  const validateParticipant = (participant, index, nextErrors) => {
+    if (!participant.firstName.trim()) nextErrors[`firstName-${index}`] = 'First name is required.'
+    if (!participant.lastName.trim()) nextErrors[`lastName-${index}`] = 'Name is required.'
+    if (!participant.email.trim()) nextErrors[`email-${index}`] = 'Email is required.'
+    else if (!validateEmail(participant.email)) nextErrors[`email-${index}`] = 'Please enter a valid email.'
+    if (!participant.country.trim()) nextErrors[`country-${index}`] = 'Country is required.'
+    if (!participant.memberFederation.trim()) nextErrors[`memberFederation-${index}`] = 'Member Federation is required.'
+    if (!participant.role.trim()) nextErrors[`role-${index}`] = 'Role is required.'
+    if (!participant.gender.trim()) nextErrors[`gender-${index}`] = 'Gender is required.'
   }
 
   const validateForm = () => {
     const nextErrors = {}
 
-    if (!formData.firstName.trim()) nextErrors.firstName = 'First name is required.'
-    if (!formData.lastName.trim()) nextErrors.lastName = 'Last name is required.'
-    if (!formData.email.trim()) nextErrors.email = 'Email is required.'
-    else if (!validateEmail(formData.email)) nextErrors.email = 'Please enter a valid email.'
-    if (!formData.country.trim()) nextErrors.country = 'Country is required.'
-    if (!formData.memberFederation.trim()) nextErrors.memberFederation = 'Member Federation is required.'
-    if (!formData.role.trim()) nextErrors.role = 'Role is required.'
-    if (!formData.gender.trim()) nextErrors.gender = 'Gender is required.'
+    participants.slice(0, participantCount).forEach((participant, index) => {
+      validateParticipant(participant, index, nextErrors)
+    })
 
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
@@ -103,8 +131,9 @@ function RegistrationCheckout({ addons, navigate, variant }) {
         },
         body: JSON.stringify({
           variantId: variant.id,
+          packageType,
           addonIds: selectedAddons,
-          customer: formData,
+          participants: participants.slice(0, participantCount),
         }),
       })
 
@@ -134,8 +163,8 @@ function RegistrationCheckout({ addons, navigate, variant }) {
         </div>
         <div className="checkout-preview">
           <div className="checkout-preview__inner">
-            <span className="preview-badge">Conference Access</span>
-            <strong>EUR {variant.price}</strong>
+            <span className="preview-badge">{selectedPackage?.baseItemName}</span>
+            <strong>EUR {selectedPackage?.price}</strong>
           </div>
         </div>
       </section>
@@ -143,25 +172,38 @@ function RegistrationCheckout({ addons, navigate, variant }) {
       <section className="shell-section checkout-grid">
         <form className="checkout-form-card" onSubmit={handleSubmit}>
           <div className="checkout-section">
-            <h2>Base package</h2>
-            <div className="selection-card selection-card--selected">
-              <div>
-                <strong>{variant.baseItemName}</strong>
-                <p>{variant.pageLabel} category</p>
-              </div>
-              <span>EUR {variant.price}</span>
+            <h2>Package selection</h2>
+            <div className="addon-grid">
+              {packageOptions.map((item) => {
+                const isSelected = item.id === packageType
+
+                return (
+                  <button
+                    key={item.id}
+                    className={`selection-card ${isSelected ? 'selection-card--selected' : ''}`}
+                    type="button"
+                    onClick={() => handlePackageChange(item.id)}
+                  >
+                    <div>
+                      <strong>{item.name}</strong>
+                      <p>{item.baseDescription}</p>
+                    </div>
+                    <span>EUR {item.price}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <div className="checkout-section">
             <h2>Add-ons</h2>
             <div className="addon-grid">
-              {addons.map((addon) => {
+              {activeAddons.map((addon) => {
                 const isSelected = selectedAddons.includes(addon.id)
 
                 return (
                   <button
-                    key={addon.id}
+                    key={`${packageType}-${addon.id}`}
                     className={`selection-card ${isSelected ? 'selection-card--selected' : ''}`}
                     type="button"
                     onClick={() => toggleAddon(addon.id)}
@@ -177,61 +219,68 @@ function RegistrationCheckout({ addons, navigate, variant }) {
             </div>
           </div>
 
-          <div className="checkout-section">
-            <h2>Participant information</h2>
-            <div className="form-grid">
-              <label className="field">
-                <span>First Name</span>
-                <input name="firstName" value={formData.firstName} onChange={handleChange} />
-                {errors.firstName ? <span className="field__error">{errors.firstName}</span> : null}
-              </label>
-              <label className="field">
-                <span>Name</span>
-                <input name="lastName" value={formData.lastName} onChange={handleChange} />
-                {errors.lastName ? <span className="field__error">{errors.lastName}</span> : null}
-              </label>
-              <label className="field field--full">
-                <span>Email</span>
-                <input name="email" type="email" value={formData.email} onChange={handleChange} />
-                {errors.email ? <span className="field__error">{errors.email}</span> : null}
-              </label>
-              <label className="field">
-                <span>Country</span>
-                <input name="country" value={formData.country} onChange={handleChange} />
-                {errors.country ? <span className="field__error">{errors.country}</span> : null}
-              </label>
-              <label className="field">
-                <span>Member Federation</span>
-                <input name="memberFederation" value={formData.memberFederation} onChange={handleChange} />
-                {errors.memberFederation ? <span className="field__error">{errors.memberFederation}</span> : null}
-              </label>
-              <label className="field">
-                <span>Role</span>
-                <input name="role" value={formData.role} onChange={handleChange} />
-                {errors.role ? <span className="field__error">{errors.role}</span> : null}
-              </label>
-              <label className="field">
-                <span>Gender</span>
-                <select name="gender" value={formData.gender} onChange={handleChange}>
-                  <option value="">Select</option>
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Non-binary">Non-binary</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-                {errors.gender ? <span className="field__error">{errors.gender}</span> : null}
-              </label>
-            </div>
-          </div>
+          {Array.from({ length: participantCount }).map((_, index) => {
+            const participant = participants[index]
+            const title =
+              participantCount === 2
+                ? `Information participant ${index + 1}`
+                : 'Participant information'
+
+            return (
+              <div className="checkout-section" key={`participant-${index}`}>
+                <h2>{title}</h2>
+                <div className="form-grid">
+                  <label className="field">
+                    <span>First Name</span>
+                    <input name="firstName" value={participant.firstName} onChange={(event) => handleParticipantChange(index, event)} />
+                    {errors[`firstName-${index}`] ? <span className="field__error">{errors[`firstName-${index}`]}</span> : null}
+                  </label>
+                  <label className="field">
+                    <span>Name</span>
+                    <input name="lastName" value={participant.lastName} onChange={(event) => handleParticipantChange(index, event)} />
+                    {errors[`lastName-${index}`] ? <span className="field__error">{errors[`lastName-${index}`]}</span> : null}
+                  </label>
+                  <label className="field field--full">
+                    <span>Email</span>
+                    <input name="email" type="email" value={participant.email} onChange={(event) => handleParticipantChange(index, event)} />
+                    {errors[`email-${index}`] ? <span className="field__error">{errors[`email-${index}`]}</span> : null}
+                  </label>
+                  <label className="field">
+                    <span>Country</span>
+                    <input name="country" value={participant.country} onChange={(event) => handleParticipantChange(index, event)} />
+                    {errors[`country-${index}`] ? <span className="field__error">{errors[`country-${index}`]}</span> : null}
+                  </label>
+                  <label className="field">
+                    <span>Member Federation</span>
+                    <input name="memberFederation" value={participant.memberFederation} onChange={(event) => handleParticipantChange(index, event)} />
+                    {errors[`memberFederation-${index}`] ? <span className="field__error">{errors[`memberFederation-${index}`]}</span> : null}
+                  </label>
+                  <label className="field">
+                    <span>Role</span>
+                    <input name="role" value={participant.role} onChange={(event) => handleParticipantChange(index, event)} />
+                    {errors[`role-${index}`] ? <span className="field__error">{errors[`role-${index}`]}</span> : null}
+                  </label>
+                  <label className="field">
+                    <span>Gender</span>
+                    <select name="gender" value={participant.gender} onChange={(event) => handleParticipantChange(index, event)}>
+                      <option value="">Select</option>
+                      <option value="Female">Female</option>
+                      <option value="Male">Male</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                    {errors[`gender-${index}`] ? <span className="field__error">{errors[`gender-${index}`]}</span> : null}
+                  </label>
+                </div>
+              </div>
+            )
+          })}
 
           {requestError ? <div className="error-box">{requestError}</div> : null}
 
           <div className="cta-row">
             <button className="button button--primary" type="submit" disabled={isLoading}>
-              {isLoading ? 'Preparing payment...' : 'Continue to SumUp'}
-            </button>
-            <button className="button button--ghost" type="button" onClick={() => navigate('admin')}>
-              Admin access
+              {isLoading ? 'Preparing payment...' : 'Continue to payment'}
             </button>
           </div>
         </form>
@@ -239,11 +288,15 @@ function RegistrationCheckout({ addons, navigate, variant }) {
         <aside className="order-summary-card">
           <h2>Order summary</h2>
           <div className="summary-line">
-            <span>{variant.baseItemName}</span>
-            <strong>EUR {variant.price}</strong>
+            <span>{selectedPackage?.name}</span>
+            <strong>EUR {selectedPackage?.price}</strong>
+          </div>
+          <div className="summary-line">
+            <span>{selectedPackage?.baseItemName}</span>
+            <strong>{participantCount} participant{participantCount > 1 ? 's' : ''}</strong>
           </div>
           {selectedAddonObjects.map((addon) => (
-            <div className="summary-line" key={addon.id}>
+            <div className="summary-line" key={`${packageType}-${addon.id}`}>
               <span>{addon.name}</span>
               <strong>EUR {addon.price}</strong>
             </div>
@@ -252,9 +305,6 @@ function RegistrationCheckout({ addons, navigate, variant }) {
             <span>Total</span>
             <strong>EUR {totalAmount}</strong>
           </div>
-          <p className="summary-note">
-            After SumUp checkout, the participant is redirected back to the summary and ticket view.
-          </p>
         </aside>
       </section>
     </div>
