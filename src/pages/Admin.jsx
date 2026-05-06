@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
+import {
+  getCountryLabel,
+  getFederationLabel,
+  getRoleLabel,
+} from '../data/participantOptions'
 
 function Admin({
   adminUser,
   catalog,
   firebaseEnabled,
+  language,
   onLogin,
   onLogout,
   onSaveCatalog,
   onUpdateRegistration,
   registrations,
+  t,
 }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -86,16 +93,16 @@ function Admin({
       await onLogin(email, password)
       setPassword('')
     } catch (error) {
-      setLoginError(error.message || 'Unable to sign in.')
+      setLoginError(error.message || t.admin.loginError)
     }
   }
 
   const handleSaveCatalog = async () => {
     try {
       await onSaveCatalog(catalogDraft)
-      setSaveMessage('Catalog saved.')
+      setSaveMessage(t.admin.catalogSaved)
     } catch (error) {
-      setSaveMessage(error.message || 'Unable to save catalog.')
+      setSaveMessage(error.message || t.admin.catalogSaveFailed)
     }
   }
 
@@ -111,11 +118,8 @@ function Admin({
     return (
       <div className="page">
         <section className="shell-section admin-blank">
-          <h1 className="checkout-title">Firebase is not configured.</h1>
-          <p className="checkout-copy">
-            Add the Firebase frontend and server environment variables to
-            activate the live admin area.
-          </p>
+          <h1 className="checkout-title">{t.admin.firebaseMissingTitle}</h1>
+          <p className="checkout-copy">{t.admin.firebaseMissingCopy}</p>
         </section>
       </div>
     )
@@ -125,10 +129,10 @@ function Admin({
     return (
       <div className="page">
         <section className="shell-section admin-auth-card">
-          <h1 className="checkout-title">Admin sign in</h1>
+          <h1 className="checkout-title">{t.admin.signInTitle}</h1>
           <form className="admin-login-form" onSubmit={handleLogin}>
             <label className="field">
-              <span>Email</span>
+              <span>{t.admin.email}</span>
               <input
                 type="email"
                 value={email}
@@ -136,7 +140,7 @@ function Admin({
               />
             </label>
             <label className="field">
-              <span>Password</span>
+              <span>{t.admin.password}</span>
               <input
                 type="password"
                 value={password}
@@ -145,7 +149,7 @@ function Admin({
             </label>
             {loginError ? <div className="error-box">{loginError}</div> : null}
             <button className="button button--primary" type="submit">
-              Sign in
+              {t.admin.signIn}
             </button>
           </form>
         </section>
@@ -158,31 +162,33 @@ function Admin({
       <section className="shell-section admin-page">
         <div className="admin-header">
           <div>
-            <span className="section-chip">Live admin</span>
-            <h1 className="checkout-title">Registrations and pricing</h1>
-            <p className="checkout-copy">Signed in as {adminUser.email}</p>
+            <span className="section-chip">{t.admin.liveAdmin}</span>
+            <h1 className="checkout-title">{t.admin.registrationsAndPricing}</h1>
+            <p className="checkout-copy">
+              {t.admin.signedInAs.replace('{email}', adminUser.email)}
+            </p>
           </div>
           <button className="button button--ghost" onClick={onLogout}>
-            Sign out
+            {t.admin.signOut}
           </button>
         </div>
 
         <div className="admin-layout">
           <div className="admin-panel">
             <div className="admin-panel__top">
-              <h2>Pricing catalog</h2>
+              <h2>{t.admin.pricingCatalog}</h2>
               <button className="button button--primary" onClick={handleSaveCatalog}>
-                Save prices
+                {t.admin.savePrices}
               </button>
             </div>
             {saveMessage ? <p className="admin-status">{saveMessage}</p> : null}
 
             <div className="admin-subsection">
-              <h3>Base pages</h3>
+              <h3>{t.admin.basePages}</h3>
               {catalogDraft.variants.map((item, index) => (
                 <div className="admin-editor-card" key={item.id}>
                   <label className="field">
-                    <span>Page label</span>
+                    <span>{t.admin.pageLabel}</span>
                     <input
                       value={item.pageLabel}
                       onChange={(event) =>
@@ -191,7 +197,7 @@ function Admin({
                     />
                   </label>
                   <label className="field">
-                    <span>Title</span>
+                    <span>{t.admin.title}</span>
                     <input
                       value={item.title}
                       onChange={(event) =>
@@ -200,7 +206,7 @@ function Admin({
                     />
                   </label>
                   <label className="field field--full">
-                    <span>Description</span>
+                    <span>{t.admin.description}</span>
                     <textarea
                       value={item.description}
                       onChange={(event) =>
@@ -212,7 +218,7 @@ function Admin({
                   {item.packageOptions.map((option) => (
                     <div className="admin-editor-card" key={`${item.id}-${option.id}`}>
                       <label className="field">
-                        <span>Package name</span>
+                        <span>{t.admin.packageName}</span>
                         <input
                           value={option.name}
                           onChange={(event) =>
@@ -226,7 +232,7 @@ function Admin({
                         />
                       </label>
                       <label className="field">
-                        <span>Conference access price</span>
+                        <span>{t.admin.conferencePrice}</span>
                         <input
                           type="number"
                           value={option.price}
@@ -241,7 +247,7 @@ function Admin({
                         />
                       </label>
                       <label className="field field--full">
-                        <span>Package description</span>
+                        <span>{t.admin.packageDescription}</span>
                         <textarea
                           value={option.baseDescription}
                           onChange={(event) =>
@@ -261,14 +267,14 @@ function Admin({
             </div>
 
             <div className="admin-subsection">
-              <h3>Add-ons</h3>
+              <h3>{t.admin.addons}</h3>
               {Object.entries(catalogDraft.addonsByPackage ?? {}).map(
                 ([packageType, addons]) => (
                   <div className="admin-editor-card" key={packageType}>
                     <h4>
                       {packageType === 'double'
-                        ? 'Base package 2 people'
-                        : 'Base package 1 person'}
+                        ? t.admin.basePackageDouble
+                        : t.admin.basePackageSingle}
                     </h4>
                     {addons.map((item) => (
                       <div
@@ -276,7 +282,7 @@ function Admin({
                         key={`${packageType}-${item.id}`}
                       >
                         <label className="field">
-                          <span>Name</span>
+                          <span>{t.admin.name}</span>
                           <input
                             value={item.name}
                             onChange={(event) =>
@@ -290,7 +296,7 @@ function Admin({
                           />
                         </label>
                         <label className="field">
-                          <span>Price</span>
+                          <span>{t.admin.price}</span>
                           <input
                             type="number"
                             value={item.price}
@@ -314,8 +320,10 @@ function Admin({
 
           <div className="admin-panel">
             <div className="admin-panel__top">
-              <h2>Live registrations</h2>
-              <span className="admin-status">{registrations.length} records</span>
+              <h2>{t.admin.liveRegistrations}</h2>
+              <span className="admin-status">
+                {t.admin.records.replace('{count}', registrations.length)}
+              </span>
             </div>
 
             <div className="registration-list">
@@ -334,7 +342,7 @@ function Admin({
                   <span>
                     {item.variantName} · {item.packageName}
                   </span>
-                  <span>{item.paymentStatus || 'pending'}</span>
+                  <span>{item.paymentStatus || t.admin.pending}</span>
                 </button>
               ))}
             </div>
@@ -351,33 +359,33 @@ function Admin({
                   {selectedRegistration.primaryParticipant?.email ||
                     selectedRegistration.customer?.email}
                 </p>
-                <p>Total: EUR {selectedRegistration.totalAmount}</p>
-                <p>Reference: {selectedRegistration.bookingReference}</p>
-                <p>Package: {selectedRegistration.packageName}</p>
+                <p>{t.admin.totalPrefix.replace('{amount}', selectedRegistration.totalAmount)}</p>
+                <p>{t.admin.referencePrefix.replace('{reference}', selectedRegistration.bookingReference)}</p>
+                <p>{t.admin.packagePrefix.replace('{name}', selectedRegistration.packageName)}</p>
 
                 {selectedRegistration.participants?.length ? (
                   <div className="admin-subsection">
-                    <h3>Participants</h3>
+                    <h3>{t.admin.participants}</h3>
                     {selectedRegistration.participants.map((participant, index) => (
                       <div
                         className="admin-editor-card"
                         key={`${selectedRegistration.id}-participant-${index}`}
                       >
-                        <strong>Participant {index + 1}</strong>
+                        <strong>{t.admin.participantIndexed.replace('{index}', index + 1)}</strong>
                         <p>
                           {participant.firstName} {participant.lastName}
                         </p>
                         <p>{participant.email}</p>
-                        <p>{participant.country}</p>
-                        <p>{participant.memberFederation}</p>
-                        <p>{participant.role}</p>
+                        <p>{getCountryLabel(participant.country, language)}</p>
+                        <p>{getFederationLabel(participant.memberFederation, language)}</p>
+                        <p>{getRoleLabel(participant.role, language)}</p>
                       </div>
                     ))}
                   </div>
                 ) : null}
 
                 <label className="field">
-                  <span>Hotel room</span>
+                  <span>{t.admin.hotelRoom}</span>
                   <input
                     defaultValue={selectedRegistration.hotelRoom || ''}
                     onBlur={(event) =>
@@ -386,7 +394,7 @@ function Admin({
                   />
                 </label>
                 <label className="field">
-                  <span>Admin notes</span>
+                  <span>{t.admin.adminNotes}</span>
                   <textarea
                     defaultValue={selectedRegistration.adminNotes || ''}
                     onBlur={(event) =>
@@ -396,7 +404,7 @@ function Admin({
                 </label>
               </div>
             ) : (
-              <p className="checkout-copy">No registrations yet.</p>
+              <p className="checkout-copy">{t.admin.noRegistrations}</p>
             )}
           </div>
         </div>

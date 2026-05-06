@@ -81,6 +81,12 @@ textarea {
   padding: 1rem 0;
 }
 
+.site-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .site-header__brand {
   display: flex;
   align-items: center;
@@ -125,6 +131,31 @@ textarea {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.language-switch__button {
+  border: 0;
+  min-width: 52px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.language-switch__button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
 }
 
 .nav-link,
@@ -200,9 +231,7 @@ textarea {
 
 .checkout-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
   gap: 1.25rem;
-  align-items: stretch;
   margin-bottom: 1.5rem;
 }
 
@@ -224,7 +253,6 @@ textarea {
   line-height: 1.7;
 }
 
-.checkout-preview,
 .checkout-form-card,
 .order-summary-card,
 .admin-panel,
@@ -234,35 +262,6 @@ textarea {
   border: 1px solid rgba(16, 35, 58, 0.08);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
-}
-
-.checkout-preview {
-  display: grid;
-  place-items: center;
-  background:
-    linear-gradient(135deg, rgba(91, 76, 240, 0.08), rgba(255, 255, 255, 0.96)),
-    #fff;
-}
-
-.checkout-preview__inner {
-  display: grid;
-  gap: 0.9rem;
-  text-align: center;
-  padding: 2rem;
-}
-
-.preview-badge {
-  display: inline-flex;
-  justify-content: center;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  background: var(--surface-alt);
-  font-weight: 700;
-}
-
-.checkout-preview strong {
-  font-size: 2rem;
-  letter-spacing: -0.04em;
 }
 
 .checkout-grid,
@@ -305,6 +304,12 @@ textarea {
 .addon-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.addon-stack {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 
@@ -564,7 +569,7 @@ textarea {
 
 @media (max-width: 760px) {
   .site-header__inner,
-  .site-header__nav,
+  .site-header__meta,
   .admin-header,
   .admin-panel__top,
   .cta-row {
@@ -580,6 +585,7 @@ textarea {
   .checkout-hero,
   .form-grid,
   .addon-grid,
+  .addon-stack,
   .ticket-card {
     grid-template-columns: 1fr;
   }

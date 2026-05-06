@@ -1,5 +1,3 @@
-export const roleOptions = ['Coach', 'Federation', 'Athlete', 'Other']
-
 const countryEntries = [
   ['AF', 'AFG'],
   ['AL', 'ALB'],
@@ -198,23 +196,83 @@ const countryEntries = [
   ['ZW', 'ZWE'],
 ]
 
-const displayNames = new Intl.DisplayNames(['en'], { type: 'region' })
+const roleLabels = {
+  en: {
+    coach: 'Coach',
+    federation: 'Federation',
+    athlete: 'Athlete',
+    other: 'Other',
+  },
+  fr: {
+    coach: 'Entraineur',
+    federation: 'Federation',
+    athlete: 'Athlete',
+    other: 'Autre',
+  },
+}
+
+const getDisplayNames = (language) =>
+  new Intl.DisplayNames([language], { type: 'region' })
 
 const getFlag = (countryCode) =>
   countryCode.replace(/./g, (character) =>
     String.fromCodePoint(127397 + character.charCodeAt(0)),
   )
 
-export const countryOptions = countryEntries
-  .map(([code2]) => ({
-    value: code2,
-    label: displayNames.of(code2) || code2,
+export const getRoleOptions = (language) =>
+  Object.entries(roleLabels[language] ?? roleLabels.en).map(([value, label]) => ({
+    value,
+    label,
   }))
-  .sort((first, second) => first.label.localeCompare(second.label))
 
-export const federationOptions = countryEntries
-  .map(([code2, code3]) => ({
-    value: code3,
-    label: `${getFlag(code2)} ${code3} - ${displayNames.of(code2) || code2}`,
-  }))
-  .sort((first, second) => first.label.localeCompare(second.label))
+export const getRoleLabel = (value, language) =>
+  (roleLabels[language] ?? roleLabels.en)[value] || value
+
+export const getCountryOptions = (language) => {
+  const displayNames = getDisplayNames(language)
+
+  return countryEntries
+    .map(([code2]) => ({
+      value: code2,
+      label: displayNames.of(code2) || code2,
+    }))
+    .sort((first, second) => first.label.localeCompare(second.label))
+}
+
+export const getCountryLabel = (value, language) => {
+  if (!value) {
+    return ''
+  }
+
+  if (value.length === 2) {
+    return getDisplayNames(language).of(value) || value
+  }
+
+  return value
+}
+
+export const getFederationOptions = (language) => {
+  const displayNames = getDisplayNames(language)
+
+  return countryEntries
+    .map(([code2, code3]) => ({
+      value: code3,
+      label: `${getFlag(code2)} ${code3} - ${displayNames.of(code2) || code2}`,
+    }))
+    .sort((first, second) => first.label.localeCompare(second.label))
+}
+
+export const getFederationLabel = (value, language) => {
+  if (!value) {
+    return ''
+  }
+
+  const displayNames = getDisplayNames(language)
+  const match = countryEntries.find(([, code3]) => code3 === value)
+
+  if (!match) {
+    return value
+  }
+
+  return `${getFlag(match[0])} ${match[1]} - ${displayNames.of(match[0]) || match[0]}`
+}

@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
+import {
+  getCountryLabel,
+  getFederationLabel,
+  getRoleLabel,
+} from '../data/participantOptions'
 
 const readJsonSafely = async (response) => {
   const rawText = await response.text()
@@ -17,19 +22,22 @@ const readJsonSafely = async (response) => {
   }
 }
 
-const getFunctionErrorMessage = (response, data, fallbackMessage) => {
+const getFunctionErrorMessage = (response, data, fallbackMessage, t) => {
   if (response.status === 404) {
-    return 'Netlify Functions are not available on this dev server. Run the app with `netlify dev` instead of plain `vite`.'
+    return t.checkout.errors.function404
   }
 
   return data.error || fallbackMessage
 }
 
-function Success({ navigate }) {
+function Success({ language, navigate, t }) {
   const [registration, setRegistration] = useState(null)
   const [qrCode, setQrCode] = useState('')
   const [error, setError] = useState('')
-  const reference = useMemo(() => new URLSearchParams(window.location.search).get('ref'), [])
+  const reference = useMemo(
+    () => new URLSearchParams(window.location.search).get('ref'),
+    [],
+  )
   const leadParticipant =
     registration?.primaryParticipant ??
     registration?.participants?.[0] ??
@@ -39,17 +47,19 @@ function Success({ navigate }) {
   useEffect(() => {
     const loadRegistration = async () => {
       if (!reference) {
-        setError('Missing booking reference.')
+        setError(t.success.missingReference)
         return
       }
 
       try {
-        const response = await fetch(`/.netlify/functions/get-registration?ref=${encodeURIComponent(reference)}`)
+        const response = await fetch(
+          `/.netlify/functions/get-registration?ref=${encodeURIComponent(reference)}`,
+        )
         const data = await readJsonSafely(response)
 
         if (!response.ok) {
           throw new Error(
-            getFunctionErrorMessage(response, data, 'Unable to load registration.'),
+            getFunctionErrorMessage(response, data, t.success.loadFailed, t),
           )
         }
 
@@ -62,12 +72,12 @@ function Success({ navigate }) {
         )
         setQrCode(qr)
       } catch (loadError) {
-        setError(loadError.message || 'Unable to load registration.')
+        setError(loadError.message || t.success.loadFailed)
       }
     }
 
     loadRegistration()
-  }, [reference])
+  }, [reference, t])
 
   if (error) {
     return (
@@ -83,7 +93,7 @@ function Success({ navigate }) {
     return (
       <div className="page">
         <section className="shell-section ticket-page">
-          <p className="checkout-copy">Loading order summary...</p>
+          <p className="checkout-copy">{t.success.loading}</p>
         </section>
       </div>
     )
@@ -93,52 +103,63 @@ function Success({ navigate }) {
     <div className="page">
       <section className="shell-section ticket-page">
         <div className="ticket-summary-card">
-          <span className="section-chip">Order summary</span>
-          <h1 className="checkout-title">Your registration has been created.</h1>
-          <p className="checkout-copy">
-            Payment return received. Final payment confirmation can still be verified by the team.
-          </p>
+          <span className="section-chip">{t.success.chip}</span>
+          <h1 className="checkout-title">{t.success.title}</h1>
+          <p className="checkout-copy">{t.success.copy}</p>
 
           <div className="summary-line">
-            <span>Reference</span>
+            <span>{t.success.reference}</span>
             <strong>{registration.bookingReference}</strong>
           </div>
           <div className="summary-line">
-            <span>Participant</span>
-            <strong>{leadParticipant?.firstName} {leadParticipant?.lastName}</strong>
+            <span>{t.success.participant}</span>
+            <strong>
+              {leadParticipant?.firstName} {leadParticipant?.lastName}
+            </strong>
           </div>
           <div className="summary-line">
-            <span>Category</span>
+            <span>{t.success.category}</span>
             <strong>{registration.variantName}</strong>
           </div>
           <div className="summary-line">
-            <span>Package</span>
+            <span>{t.success.package}</span>
             <strong>{registration.packageName}</strong>
           </div>
           <div className="summary-line">
-            <span>Total</span>
+            <span>{t.success.total}</span>
             <strong>EUR {registration.totalAmount}</strong>
           </div>
 
           <div className="ticket-card">
             <div>
-              <span className="section-chip">Official ticket</span>
-              <h2>{leadParticipant?.firstName} {leadParticipant?.lastName}</h2>
+              <span className="section-chip">{t.success.ticketChip}</span>
+              <h2>
+                {leadParticipant?.firstName} {leadParticipant?.lastName}
+              </h2>
               <p>{leadParticipant?.email}</p>
-              <p>{leadParticipant?.country}</p>
-              <p>{registration.variantName} · {registration.packageName}</p>
-              <p>Show this QR code on arrival.</p>
+              <p>{getCountryLabel(leadParticipant?.country, language)}</p>
+              <p>
+                {registration.variantName} · {registration.packageName}
+              </p>
+              <p>{t.success.showQr}</p>
             </div>
-            {qrCode ? <img className="ticket-card__qr" src={qrCode} alt="Ticket QR code" /> : null}
+            {qrCode ? (
+              <img className="ticket-card__qr" src={qrCode} alt="Ticket QR code" />
+            ) : null}
           </div>
 
           {registration.participants?.length > 1 ? (
             <div className="ticket-addons">
-              <h3>Participants</h3>
+              <h3>{t.success.participants}</h3>
               <ul className="bullet-list">
                 {registration.participants.map((participant, index) => (
                   <li key={`${registration.bookingReference}-participant-${index}`}>
-                    Participant {index + 1}: {participant.firstName} {participant.lastName} - {participant.email}
+                    {t.admin.participantIndexed.replace('{index}', index + 1)}:{' '}
+                    {participant.firstName} {participant.lastName} -{' '}
+                    {participant.email} -{' '}
+                    {getCountryLabel(participant.country, language)} -{' '}
+                    {getFederationLabel(participant.memberFederation, language)} -{' '}
+                    {getRoleLabel(participant.role, language)}
                   </li>
                 ))}
               </ul>
@@ -147,10 +168,12 @@ function Success({ navigate }) {
 
           {registration.addons?.length ? (
             <div className="ticket-addons">
-              <h3>Add-ons</h3>
+              <h3>{t.success.addons}</h3>
               <ul className="bullet-list">
                 {registration.addons.map((item) => (
-                  <li key={item.id}>{item.name} - EUR {item.price}</li>
+                  <li key={item.id}>
+                    {item.name} - EUR {item.price}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -158,7 +181,7 @@ function Success({ navigate }) {
 
           <div className="cta-row">
             <button className="button button--primary" onClick={() => navigate('local')}>
-              New registration
+              {t.success.newRegistration}
             </button>
           </div>
         </div>

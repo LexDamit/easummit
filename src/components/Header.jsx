@@ -1,15 +1,15 @@
 import flaLogo from '../assets/fla-logo.svg'
 
-function Header({ currentPage, navigate, variants }) {
+function Header({ currentPage, language, navigate, setLanguage, t, variants }) {
   const activeVariant =
     variants.find((item) => item.id === currentPage) ?? variants[0] ?? null
   const pageLabel =
     currentPage === 'admin'
-      ? 'Admin'
+      ? t.currentPageAdmin
       : currentPage === 'success'
-        ? 'Confirmation'
+        ? t.currentPageSuccess
         : currentPage === 'cancel'
-          ? 'Payment cancelled'
+          ? t.currentPageCancel
           : activeVariant?.pageLabel
 
   return (
@@ -18,16 +18,34 @@ function Header({ currentPage, navigate, variants }) {
         <button className="site-header__brand" onClick={() => navigate('local')}>
           <img className="site-header__logo" src={flaLogo} alt="FLA logo" />
           <span>
-            <span className="site-header__eyebrow">Event registration</span>
-            <span className="site-header__name">FLA Checkout</span>
+            <span className="site-header__eyebrow">{t.headerEyebrow}</span>
+            <span className="site-header__name">{t.headerTitle}</span>
           </span>
         </button>
-        {pageLabel ? (
-          <div className="site-header__status">
-            <span className="site-header__eyebrow">Current page</span>
-            <span className="site-header__name">{pageLabel}</span>
+        <div className="site-header__meta">
+          {pageLabel ? (
+            <div className="site-header__status">
+              <span className="site-header__eyebrow">{t.currentPage}</span>
+              <span className="site-header__name">{pageLabel}</span>
+            </div>
+          ) : null}
+          <div className="language-switch" aria-label={t.languageLabel}>
+            <button
+              className={`language-switch__button ${language === 'fr' ? 'is-active' : ''}`}
+              onClick={() => setLanguage('fr')}
+              type="button"
+            >
+              {t.french}
+            </button>
+            <button
+              className={`language-switch__button ${language === 'en' ? 'is-active' : ''}`}
+              onClick={() => setLanguage('en')}
+              type="button"
+            >
+              {t.english}
+            </button>
           </div>
-        ) : null}
+        </div>
       </div>
     </header>
   )

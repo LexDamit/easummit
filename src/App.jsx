@@ -6,6 +6,7 @@ import Success from './pages/Success'
 import Cancel from './pages/Cancel'
 import Admin from './pages/Admin'
 import { defaultRegistrationCatalog } from './data/registrationCatalog'
+import { getUiTranslations, localizeCatalog } from './data/translations'
 import {
   firebaseEnabled,
   loadRegistrationCatalog,
@@ -16,6 +17,8 @@ import {
   subscribeToAdminAuth,
   updateRegistrationAdmin,
 } from './lib/firebase'
+
+const LANGUAGE_KEY = 'fla-registration-language'
 
 const PAGE_PATHS = {
   local: '/local',
@@ -40,18 +43,29 @@ const getPageFromLocation = () => {
 
 function App() {
   const [page, setPage] = useState(getPageFromLocation)
+  const [language, setLanguage] = useState(
+    () => window.localStorage.getItem(LANGUAGE_KEY) || 'en',
+  )
   const [catalog, setCatalog] = useState(defaultRegistrationCatalog)
   const [adminUser, setAdminUser] = useState(null)
   const [registrations, setRegistrations] = useState([])
   const [catalogNotice, setCatalogNotice] = useState('')
 
+  const localizedCatalog = useMemo(
+    () => localizeCatalog(catalog, language),
+    [catalog, language],
+  )
+  const t = useMemo(() => getUiTranslations(language), [language])
   const variantsById = useMemo(
-    () => Object.fromEntries(catalog.variants.map((item) => [item.id, item])),
-    [catalog.variants],
+    () => Object.fromEntries(localizedCatalog.variants.map((item) => [item.id, item])),
+    [localizedCatalog.variants],
   )
 
   useEffect(() => subscribeToAdminAuth(setAdminUser), [])
   useEffect(() => subscribeRegistrations(setRegistrations), [])
+  useEffect(() => {
+    window.localStorage.setItem(LANGUAGE_KEY, language)
+  }, [language])
   useEffect(() => {
     const handlePopState = () => {
       setPage(getPageFromLocation())
@@ -79,14 +93,14 @@ function App() {
 
         if (!cancelled && message.toLowerCase().includes('offline')) {
           setCatalogNotice(
-            'Firebase catalog unavailable right now. The app is using local fallback prices until the connection is restored.',
+            t.notices.offline,
           )
           return
         }
 
         if (!cancelled) {
           setCatalogNotice(
-            'Firebase catalog could not be loaded. The app is using local fallback prices.',
+            t.notices.unavailable,
           )
         }
       }
@@ -97,7 +111,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t.notices.offline, t.notices.unavailable])
 
   const navigate = (nextPage) => {
     setPage(nextPage)
@@ -122,11 +136,11 @@ function App() {
 
   const renderPage = () => {
     if (page === 'success') {
-      return <Success navigate={navigate} />
+      return <Success language={language} navigate={navigate} t={t} />
     }
 
     if (page === 'cancel') {
-      return <Cancel navigate={navigate} />
+      return <Cancel navigate={navigate} t={t} />
     }
 
     if (page === 'admin') {
@@ -135,22 +149,25 @@ function App() {
           adminUser={adminUser}
           catalog={catalog}
           firebaseEnabled={firebaseEnabled}
+          language={language}
           onLogin={signInAdmin}
           onLogout={signOutAdmin}
           onSaveCatalog={handleSaveCatalog}
           onUpdateRegistration={updateRegistrationAdmin}
           registrations={registrations}
+          t={t}
         />
       )
     }
 
-    const selectedVariant = variantsById[page] ?? catalog.variants[0]
+    const selectedVariant = variantsById[page] ?? localizedCatalog.variants[0]
 
     return (
       <RegistrationCheckout
-        addonsByPackage={catalog.addonsByPackage ?? {}}
-        navigate={navigate}
+        addonsByPackage={localizedCatalog.addonsByPackage ?? {}}
+        language={language}
         variant={selectedVariant}
+        t={t}
       />
     )
   }
@@ -159,8 +176,11 @@ function App() {
     <div className="app-shell">
       <Header
         currentPage={page}
+        language={language}
         navigate={navigate}
-        variants={catalog.variants}
+        setLanguage={setLanguage}
+        t={t}
+        variants={localizedCatalog.variants}
       />
       {catalogNotice ? (
         <div className="shell-section app-notice">
@@ -168,7 +188,7 @@ function App() {
         </div>
       ) : null}
       <main>{renderPage()}</main>
-      <Footer navigate={navigate} />
+      <Footer navigate={navigate} t={t} />
     </div>
   )
 }

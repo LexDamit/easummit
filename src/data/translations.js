@@ -1,0 +1,380 @@
+const uiTranslations = {
+  en: {
+    languageLabel: 'Language',
+    french: 'FR',
+    english: 'EN',
+    headerEyebrow: 'Event registration',
+    headerTitle: 'FLA Checkout',
+    currentPage: 'Current page',
+    currentPageAdmin: 'Admin',
+    currentPageSuccess: 'Confirmation',
+    currentPageCancel: 'Payment cancelled',
+    footerText: 'Conference registration, add-ons, tickets and live admin tracking.',
+    adminLogin: 'Admin login',
+    notices: {
+      offline:
+        'Firebase catalog unavailable right now. The app is using local fallback prices until the connection is restored.',
+      unavailable:
+        'Firebase catalog could not be loaded. The app is using local fallback prices.',
+    },
+    checkout: {
+      packageSelection: 'Package selection',
+      addons: 'Add-ons',
+      participantInformation: 'Participant information',
+      participantInformationIndexed: 'Participant {index} information',
+      firstName: 'First Name',
+      lastName: 'Name',
+      email: 'Email',
+      country: 'Country',
+      memberFederation: 'Member Federation',
+      role: 'Role',
+      gender: 'Gender',
+      select: 'Select',
+      selectCountry: 'Select a country',
+      selectFederation: 'Select a federation',
+      selectRole: 'Select a role',
+      female: 'Female',
+      male: 'Male',
+      nonBinary: 'Non-binary',
+      preferNotToSay: 'Prefer not to say',
+      orderSummary: 'Order summary',
+      total: 'Total',
+      participantCount: '{count} participant',
+      participantCountPlural: '{count} participants',
+      continueToPayment: 'Continue to payment',
+      preparingPayment: 'Preparing payment...',
+      optionalAddon: 'Optional add-on',
+      dinnerSingle: 'Includes 1 dinner place.',
+      dinnerDouble: 'Includes 2 dinner places for both participants.',
+      hotelSingle: 'Includes a single room for 1 participant.',
+      hotelDouble: 'Includes a double room for both participants.',
+      errors: {
+        firstNameRequired: 'First name is required.',
+        lastNameRequired: 'Name is required.',
+        emailRequired: 'Email is required.',
+        emailInvalid: 'Please enter a valid email.',
+        countryRequired: 'Country is required.',
+        federationRequired: 'Member Federation is required.',
+        roleRequired: 'Role is required.',
+        genderRequired: 'Gender is required.',
+        function404:
+          'Netlify Functions are not available on this dev server. Run the app with `netlify dev` instead of plain `vite`.',
+        checkoutFailed: 'Unable to create checkout.',
+      },
+    },
+    success: {
+      missingReference: 'Missing booking reference.',
+      loading: 'Loading order summary...',
+      loadFailed: 'Unable to load registration.',
+      chip: 'Order summary',
+      title: 'Your registration has been created.',
+      copy:
+        'Payment return received. Final payment confirmation can still be verified by the team.',
+      reference: 'Reference',
+      participant: 'Participant',
+      category: 'Category',
+      package: 'Package',
+      total: 'Total',
+      ticketChip: 'Official ticket',
+      showQr: 'Show this QR code on arrival.',
+      participants: 'Participants',
+      addons: 'Add-ons',
+      newRegistration: 'New registration',
+    },
+    cancel: {
+      chip: 'Payment cancelled',
+      title: 'The payment was not completed.',
+      copy:
+        'The registration is still incomplete. You can return to one of the registration pages and try again.',
+      back: 'Back to registrations',
+    },
+    admin: {
+      firebaseMissingTitle: 'Firebase is not configured.',
+      firebaseMissingCopy:
+        'Add the Firebase frontend and server environment variables to activate the live admin area.',
+      signInTitle: 'Admin sign in',
+      email: 'Email',
+      password: 'Password',
+      signIn: 'Sign in',
+      signOut: 'Sign out',
+      loginError: 'Unable to sign in.',
+      liveAdmin: 'Live admin',
+      registrationsAndPricing: 'Registrations and pricing',
+      signedInAs: 'Signed in as {email}',
+      pricingCatalog: 'Pricing catalog',
+      savePrices: 'Save prices',
+      catalogSaved: 'Catalog saved.',
+      catalogSaveFailed: 'Unable to save catalog.',
+      basePages: 'Base pages',
+      pageLabel: 'Page label',
+      title: 'Title',
+      description: 'Description',
+      packageName: 'Package name',
+      conferencePrice: 'Conference access price',
+      packageDescription: 'Package description',
+      addons: 'Add-ons',
+      basePackageSingle: 'Base package 1 person',
+      basePackageDouble: 'Base package 2 people',
+      name: 'Name',
+      price: 'Price',
+      liveRegistrations: 'Live registrations',
+      records: '{count} records',
+      totalPrefix: 'Total: EUR {amount}',
+      referencePrefix: 'Reference: {reference}',
+      packagePrefix: 'Package: {name}',
+      participants: 'Participants',
+      participantIndexed: 'Participant {index}',
+      hotelRoom: 'Hotel room',
+      adminNotes: 'Admin notes',
+      noRegistrations: 'No registrations yet.',
+      pending: 'pending',
+    },
+  },
+  fr: {
+    languageLabel: 'Langue',
+    french: 'FR',
+    english: 'EN',
+    headerEyebrow: "Inscription a l'evenement",
+    headerTitle: 'Inscription FLA',
+    currentPage: 'Page active',
+    currentPageAdmin: 'Admin',
+    currentPageSuccess: 'Confirmation',
+    currentPageCancel: 'Paiement annule',
+    footerText:
+      "Inscription conference, options, billets et suivi administratif en direct.",
+    adminLogin: 'Connexion admin',
+    notices: {
+      offline:
+        "Le catalogue Firebase est indisponible pour le moment. L'application utilise les tarifs locaux de secours jusqu'au retour de la connexion.",
+      unavailable:
+        "Le catalogue Firebase n'a pas pu etre charge. L'application utilise les tarifs locaux de secours.",
+    },
+    checkout: {
+      packageSelection: 'Choix du package',
+      addons: 'Options',
+      participantInformation: 'Informations du participant',
+      participantInformationIndexed: 'Informations du participant {index}',
+      firstName: 'Prenom',
+      lastName: 'Nom',
+      email: 'Email',
+      country: 'Pays',
+      memberFederation: 'Federation membre',
+      role: 'Role',
+      gender: 'Genre',
+      select: 'Selectionner',
+      selectCountry: 'Selectionner un pays',
+      selectFederation: 'Selectionner une federation',
+      selectRole: 'Selectionner un role',
+      female: 'Femme',
+      male: 'Homme',
+      nonBinary: 'Non-binaire',
+      preferNotToSay: 'Prefere ne pas repondre',
+      orderSummary: 'Recapitulatif',
+      total: 'Total',
+      participantCount: '{count} participant',
+      participantCountPlural: '{count} participants',
+      continueToPayment: 'Continuer vers le paiement',
+      preparingPayment: 'Preparation du paiement...',
+      optionalAddon: 'Option supplementaire',
+      dinnerSingle: 'Comprend 1 place pour le diner.',
+      dinnerDouble: 'Comprend 2 places pour le diner pour les deux participants.',
+      hotelSingle: 'Comprend une chambre simple pour 1 participant.',
+      hotelDouble: 'Comprend une chambre double pour les deux participants.',
+      errors: {
+        firstNameRequired: 'Le prenom est requis.',
+        lastNameRequired: 'Le nom est requis.',
+        emailRequired: "L'email est requis.",
+        emailInvalid: 'Veuillez saisir un email valide.',
+        countryRequired: 'Le pays est requis.',
+        federationRequired: 'La federation membre est requise.',
+        roleRequired: 'Le role est requis.',
+        genderRequired: 'Le genre est requis.',
+        function404:
+          "Les fonctions Netlify ne sont pas disponibles sur ce serveur de developpement. Lancez l'application avec `netlify dev` au lieu de `vite`.",
+        checkoutFailed: 'Impossible de creer le paiement.',
+      },
+    },
+    success: {
+      missingReference: 'Reference de reservation manquante.',
+      loading: 'Chargement du recapitulatif...',
+      loadFailed: "Impossible de charger l'inscription.",
+      chip: 'Recapitulatif',
+      title: "Votre inscription a ete creee.",
+      copy:
+        "Le retour de paiement a ete recu. La confirmation finale du paiement peut encore etre verifiee par l'equipe.",
+      reference: 'Reference',
+      participant: 'Participant',
+      category: 'Categorie',
+      package: 'Package',
+      total: 'Total',
+      ticketChip: 'Billet officiel',
+      showQr: "Presentez ce QR code a l'arrivee.",
+      participants: 'Participants',
+      addons: 'Options',
+      newRegistration: 'Nouvelle inscription',
+    },
+    cancel: {
+      chip: 'Paiement annule',
+      title: "Le paiement n'a pas ete finalise.",
+      copy:
+        "L'inscription est encore incomplete. Vous pouvez revenir sur l'une des pages d'inscription et reessayer.",
+      back: "Retour aux inscriptions",
+    },
+    admin: {
+      firebaseMissingTitle: "Firebase n'est pas configure.",
+      firebaseMissingCopy:
+        "Ajoutez les variables d'environnement Firebase front-end et serveur pour activer l'espace admin en direct.",
+      signInTitle: 'Connexion admin',
+      email: 'Email',
+      password: 'Mot de passe',
+      signIn: 'Se connecter',
+      signOut: 'Se deconnecter',
+      loginError: 'Connexion impossible.',
+      liveAdmin: 'Admin en direct',
+      registrationsAndPricing: 'Inscriptions et tarifs',
+      signedInAs: 'Connecte en tant que {email}',
+      pricingCatalog: 'Catalogue tarifaire',
+      savePrices: 'Enregistrer les tarifs',
+      catalogSaved: 'Catalogue enregistre.',
+      catalogSaveFailed: "Impossible d'enregistrer le catalogue.",
+      basePages: 'Pages de base',
+      pageLabel: 'Libelle de page',
+      title: 'Titre',
+      description: 'Description',
+      packageName: 'Nom du package',
+      conferencePrice: "Prix d'acces conference",
+      packageDescription: 'Description du package',
+      addons: 'Options',
+      basePackageSingle: 'Package de base 1 personne',
+      basePackageDouble: 'Package de base 2 personnes',
+      name: 'Nom',
+      price: 'Prix',
+      liveRegistrations: 'Inscriptions en direct',
+      records: '{count} dossiers',
+      totalPrefix: 'Total : EUR {amount}',
+      referencePrefix: 'Reference : {reference}',
+      packagePrefix: 'Package : {name}',
+      participants: 'Participants',
+      participantIndexed: 'Participant {index}',
+      hotelRoom: 'Chambre',
+      adminNotes: 'Notes admin',
+      noRegistrations: "Aucune inscription pour l'instant.",
+      pending: 'en attente',
+    },
+  },
+}
+
+const catalogTranslations = {
+  en: {
+    variants: {
+      local: {
+        pageLabel: 'Local',
+        title: 'Local participants',
+        description:
+          'The packages below are reserved for participants from Luxembourg who hold an FLA or INAPS licence. All packages include full conference access, coffee breaks and lunch on Saturday.',
+      },
+      partners: {
+        pageLabel: 'Partners',
+        title: 'Partners',
+        description:
+          'Packages for partner delegates. All packages include full conference access, coffee breaks and lunch on Saturday.',
+      },
+      international: {
+        pageLabel: 'International',
+        title: 'International',
+        description:
+          'Packages for international participants. All packages include full conference access, coffee breaks and lunch on Saturday.',
+      },
+    },
+    packageOptions: {
+      single: {
+        name: 'Base package 1 person',
+        baseItemName: 'Conference Access',
+        baseDescription:
+          'Includes full conference access, coffee breaks and lunch on Saturday.',
+      },
+      double: {
+        name: 'Base package 2 people',
+        baseItemName: 'Conference Access',
+        baseDescription:
+          'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
+      },
+    },
+    addons: {
+      'networking-dinner': 'Networking dinner (Saturday evening)',
+      'hotel-09-10': 'Hotel stay 1 night (09-10 October)',
+      'hotel-10-11': 'Hotel stay 1 night (10-11 October)',
+      'hotel-09-11': 'Hotel stay 2 nights (09-11 October)',
+    },
+  },
+  fr: {
+    variants: {
+      local: {
+        pageLabel: 'Local',
+        title: 'Participants locaux',
+        description:
+          'Les packages ci-dessous sont reserves aux participants du Luxembourg titulaires d une licence FLA ou INAPS. Tous les packages incluent l acces complet a la conference, les pauses cafe et le dejeuner du samedi.',
+      },
+      partners: {
+        pageLabel: 'Partenaires',
+        title: 'Partenaires',
+        description:
+          'Packages pour les delegues partenaires. Tous les packages incluent l acces complet a la conference, les pauses cafe et le dejeuner du samedi.',
+      },
+      international: {
+        pageLabel: 'International',
+        title: 'International',
+        description:
+          'Packages pour les participants internationaux. Tous les packages incluent l acces complet a la conference, les pauses cafe et le dejeuner du samedi.',
+      },
+    },
+    packageOptions: {
+      single: {
+        name: 'Package de base 1 personne',
+        baseItemName: 'Acces conference',
+        baseDescription:
+          'Inclut l acces complet a la conference, les pauses cafe et le dejeuner du samedi.',
+      },
+      double: {
+        name: 'Package de base 2 personnes',
+        baseItemName: 'Acces conference',
+        baseDescription:
+          'Inclut l acces complet a la conference, les pauses cafe et le dejeuner du samedi pour 2 participants.',
+      },
+    },
+    addons: {
+      'networking-dinner': 'Diner networking (samedi soir)',
+      'hotel-09-10': "Sejour hotel 1 nuit (09-10 octobre)",
+      'hotel-10-11': "Sejour hotel 1 nuit (10-11 octobre)",
+      'hotel-09-11': "Sejour hotel 2 nuits (09-11 octobre)",
+    },
+  },
+}
+
+export const getUiTranslations = (language) =>
+  uiTranslations[language] ?? uiTranslations.en
+
+export const localizeCatalog = (catalog, language) => {
+  const copy = catalogTranslations[language] ?? catalogTranslations.en
+
+  return {
+    ...catalog,
+    variants: catalog.variants.map((variant) => ({
+      ...variant,
+      ...(copy.variants[variant.id] ?? {}),
+      packageOptions: variant.packageOptions.map((option) => ({
+        ...option,
+        ...(copy.packageOptions[option.id] ?? {}),
+      })),
+    })),
+    addonsByPackage: Object.fromEntries(
+      Object.entries(catalog.addonsByPackage ?? {}).map(([packageType, addons]) => [
+        packageType,
+        addons.map((addon) => ({
+          ...addon,
+          name: copy.addons[addon.id] ?? addon.name,
+        })),
+      ]),
+    ),
+  }
+}

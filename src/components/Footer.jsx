@@ -1,10 +1,10 @@
-function Footer({ navigate }) {
+function Footer({ navigate, t }) {
   return (
     <footer className="site-footer">
       <div className="shell-section site-footer__inner">
-        <p>Conference registration, add-ons, tickets and live admin tracking.</p>
+        <p>{t.footerText}</p>
         <button className="text-link" onClick={() => navigate('admin')}>
-          Admin login
+          {t.adminLogin}
         </button>
       </div>
     </footer>
