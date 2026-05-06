@@ -34,6 +34,34 @@ export const firebaseEnabled = Boolean(
     firebaseConfig.appId,
 )
 
+const maskValue = (value, visible = 6) => {
+  if (!value) {
+    return 'missing'
+  }
+
+  const text = String(value)
+
+  if (text.length <= visible * 2) {
+    return `${text.slice(0, visible)}...`
+  }
+
+  return `${text.slice(0, visible)}...${text.slice(-visible)}`
+}
+
+export const firebaseDebugInfo = {
+  enabled: firebaseEnabled,
+  apiKeyPresent: Boolean(firebaseConfig.apiKey),
+  authDomainPresent: Boolean(firebaseConfig.authDomain),
+  projectIdPresent: Boolean(firebaseConfig.projectId),
+  appIdPresent: Boolean(firebaseConfig.appId),
+  storageBucketPresent: Boolean(firebaseConfig.storageBucket),
+  messagingSenderIdPresent: Boolean(firebaseConfig.messagingSenderId),
+  projectId: firebaseConfig.projectId || 'missing',
+  authDomain: firebaseConfig.authDomain || 'missing',
+  apiKeyPreview: maskValue(firebaseConfig.apiKey, 5),
+  appIdPreview: maskValue(firebaseConfig.appId, 8),
+}
+
 const app = firebaseEnabled ? initializeApp(firebaseConfig) : null
 const auth = app ? getAuth(app) : null
 const db = app ? getFirestore(app) : null

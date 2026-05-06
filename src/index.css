@@ -229,6 +229,23 @@ textarea {
   font-weight: 600;
 }
 
+.app-debug {
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px dashed rgba(16, 35, 58, 0.2);
+  border-radius: 14px;
+  background: rgba(16, 35, 58, 0.03);
+  color: var(--text);
+  line-height: 1.7;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.app-debug strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-body);
+}
+
 .checkout-hero {
   display: grid;
   gap: 1.25rem;

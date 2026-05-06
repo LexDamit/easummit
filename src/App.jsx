@@ -8,6 +8,7 @@ import Admin from './pages/Admin'
 import { defaultRegistrationCatalog } from './data/registrationCatalog'
 import { getUiTranslations, localizeCatalog } from './data/translations'
 import {
+  firebaseDebugInfo,
   firebaseEnabled,
   loadRegistrationCatalog,
   saveRegistrationCatalog,
@@ -50,6 +51,10 @@ function App() {
   const [adminUser, setAdminUser] = useState(null)
   const [registrations, setRegistrations] = useState([])
   const [catalogNotice, setCatalogNotice] = useState('')
+  const showFirebaseDebug = useMemo(
+    () => new URLSearchParams(window.location.search).get('debugFirebase') === '1',
+    [],
+  )
 
   const localizedCatalog = useMemo(
     () => localizeCatalog(catalog, language),
@@ -185,6 +190,22 @@ function App() {
       {catalogNotice ? (
         <div className="shell-section app-notice">
           {catalogNotice}
+        </div>
+      ) : null}
+      {showFirebaseDebug ? (
+        <div className="shell-section app-debug">
+          <strong>Firebase debug</strong>
+          <div>enabled: {String(firebaseDebugInfo.enabled)}</div>
+          <div>apiKeyPresent: {String(firebaseDebugInfo.apiKeyPresent)}</div>
+          <div>authDomainPresent: {String(firebaseDebugInfo.authDomainPresent)}</div>
+          <div>projectIdPresent: {String(firebaseDebugInfo.projectIdPresent)}</div>
+          <div>appIdPresent: {String(firebaseDebugInfo.appIdPresent)}</div>
+          <div>storageBucketPresent: {String(firebaseDebugInfo.storageBucketPresent)}</div>
+          <div>messagingSenderIdPresent: {String(firebaseDebugInfo.messagingSenderIdPresent)}</div>
+          <div>projectId: {firebaseDebugInfo.projectId}</div>
+          <div>authDomain: {firebaseDebugInfo.authDomain}</div>
+          <div>apiKeyPreview: {firebaseDebugInfo.apiKeyPreview}</div>
+          <div>appIdPreview: {firebaseDebugInfo.appIdPreview}</div>
         </div>
       ) : null}
       <main>{renderPage()}</main>
