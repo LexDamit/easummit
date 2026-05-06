@@ -18,13 +18,28 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 
+const defaultFirebaseConfig = {
+  apiKey: 'AIzaSyAhQm6L7c87rQD54N4ojB3FLj5aMWkYogA',
+  authDomain: 'checkout-b432c.firebaseapp.com',
+  projectId: 'checkout-b432c',
+  storageBucket: 'checkout-b432c.firebasestorage.app',
+  messagingSenderId: '1053600257861',
+  appId: '1:1053600257861:web:d66950903f37a39447d02c',
+}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+    defaultFirebaseConfig.storageBucket,
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    defaultFirebaseConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
 }
 
 export const firebaseEnabled = Boolean(
@@ -60,11 +75,27 @@ export const firebaseDebugInfo = {
   authDomain: firebaseConfig.authDomain || 'missing',
   apiKeyPreview: maskValue(firebaseConfig.apiKey, 5),
   appIdPreview: maskValue(firebaseConfig.appId, 8),
+  usingFallbackApiKey: !import.meta.env.VITE_FIREBASE_API_KEY,
+  usingFallbackProjectId: !import.meta.env.VITE_FIREBASE_PROJECT_ID,
 }
 
-const app = firebaseEnabled ? initializeApp(firebaseConfig) : null
-const auth = app ? getAuth(app) : null
-const db = app ? getFirestore(app) : null
+let firebaseInitError = ''
+let app = null
+let auth = null
+let db = null
+
+if (firebaseEnabled) {
+  try {
+    app = initializeApp(firebaseConfig)
+    auth = getAuth(app)
+    db = getFirestore(app)
+  } catch (error) {
+    firebaseInitError = error.message || 'Firebase initialization failed.'
+    console.error('Firebase initialization error', error)
+  }
+}
+
+export const firebaseInitializationError = firebaseInitError
 
 export function subscribeToAdminAuth(callback) {
   if (!auth) {
@@ -77,7 +108,7 @@ export function subscribeToAdminAuth(callback) {
 
 export async function signInAdmin(email, password) {
   if (!auth) {
-    throw new Error('Firebase auth is not configured.')
+    throw new Error(firebaseInitError || 'Firebase auth is not configured.')
   }
 
   return signInWithEmailAndPassword(auth, email, password)
@@ -102,7 +133,7 @@ export async function loadRegistrationCatalog() {
 
 export async function saveRegistrationCatalog(catalog) {
   if (!db) {
-    throw new Error('Firebase firestore is not configured.')
+    throw new Error(firebaseInitError || 'Firebase firestore is not configured.')
   }
 
   await setDoc(
@@ -138,7 +169,7 @@ export function subscribeRegistrations(callback) {
 
 export async function updateRegistrationAdmin(registrationId, payload) {
   if (!db) {
-    throw new Error('Firebase firestore is not configured.')
+    throw new Error(firebaseInitError || 'Firebase firestore is not configured.')
   }
 
   await updateDoc(doc(db, 'registrations', registrationId), {
