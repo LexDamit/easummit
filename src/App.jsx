@@ -207,8 +207,6 @@ function App() {
           <div>authDomain: {firebaseDebugInfo.authDomain}</div>
           <div>apiKeyPreview: {firebaseDebugInfo.apiKeyPreview}</div>
           <div>appIdPreview: {firebaseDebugInfo.appIdPreview}</div>
-          <div>usingFallbackApiKey: {String(firebaseDebugInfo.usingFallbackApiKey)}</div>
-          <div>usingFallbackProjectId: {String(firebaseDebugInfo.usingFallbackProjectId)}</div>
           <div>initializationError: {firebaseInitializationError || 'none'}</div>
         </div>
       ) : null}

@@ -18,28 +18,13 @@ import {
   updateDoc,
 } from 'firebase/firestore'
 
-const defaultFirebaseConfig = {
-  apiKey: 'AIzaSyAhQm6L7c87rQD54N4ojB3FLj5aMWkYogA',
-  authDomain: 'checkout-b432c.firebaseapp.com',
-  projectId: 'checkout-b432c',
-  storageBucket: 'checkout-b432c.firebasestorage.app',
-  messagingSenderId: '1053600257861',
-  appId: '1:1053600257861:web:d66950903f37a39447d02c',
-}
-
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
-  authDomain:
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
-  projectId:
-    import.meta.env.VITE_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
-  storageBucket:
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
-    defaultFirebaseConfig.storageBucket,
-  messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
-    defaultFirebaseConfig.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 export const firebaseEnabled = Boolean(
@@ -75,8 +60,6 @@ export const firebaseDebugInfo = {
   authDomain: firebaseConfig.authDomain || 'missing',
   apiKeyPreview: maskValue(firebaseConfig.apiKey, 5),
   appIdPreview: maskValue(firebaseConfig.appId, 8),
-  usingFallbackApiKey: !import.meta.env.VITE_FIREBASE_API_KEY,
-  usingFallbackProjectId: !import.meta.env.VITE_FIREBASE_PROJECT_ID,
 }
 
 let firebaseInitError = ''
