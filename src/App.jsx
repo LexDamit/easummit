@@ -17,18 +17,29 @@ import {
   updateRegistrationAdmin,
 } from './lib/firebase'
 
-const getInitialPage = () => {
+const PAGE_PATHS = {
+  local: '/local',
+  partners: '/partners',
+  international: '/international',
+  admin: '/admin',
+}
+
+const getPageFromLocation = () => {
   const params = new URLSearchParams(window.location.search)
   const status = params.get('status')
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/local'
 
   if (status === 'success') return 'success'
   if (status === 'cancel') return 'cancel'
+  if (pathname === PAGE_PATHS.admin) return 'admin'
+  if (pathname === PAGE_PATHS.partners) return 'partners'
+  if (pathname === PAGE_PATHS.international) return 'international'
 
   return 'local'
 }
 
 function App() {
-  const [page, setPage] = useState(getInitialPage)
+  const [page, setPage] = useState(getPageFromLocation)
   const [catalog, setCatalog] = useState(defaultRegistrationCatalog)
   const [adminUser, setAdminUser] = useState(null)
   const [registrations, setRegistrations] = useState([])
@@ -41,6 +52,17 @@ function App() {
 
   useEffect(() => subscribeToAdminAuth(setAdminUser), [])
   useEffect(() => subscribeRegistrations(setRegistrations), [])
+  useEffect(() => {
+    const handlePopState = () => {
+      setPage(getPageFromLocation())
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -80,12 +102,16 @@ function App() {
   const navigate = (nextPage) => {
     setPage(nextPage)
 
+    const currentBasePath =
+      PAGE_PATHS[page] ||
+      PAGE_PATHS[getPageFromLocation()] ||
+      PAGE_PATHS.local
     const nextUrl =
       nextPage === 'success' || nextPage === 'cancel'
-        ? `${window.location.pathname}?status=${nextPage}`
-        : window.location.pathname
+        ? `${currentBasePath}?status=${nextPage}`
+        : PAGE_PATHS[nextPage] || PAGE_PATHS.local
 
-    window.history.replaceState({}, '', nextUrl)
+    window.history.pushState({}, '', nextUrl)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 

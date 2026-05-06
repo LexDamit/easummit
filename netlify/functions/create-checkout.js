@@ -173,6 +173,8 @@ const validateParticipants = (participants, participantCount) => {
   )
 }
 
+const getBaseAppUrl = () => String(process.env.APP_URL || '').replace(/\/+$/, '')
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -274,7 +276,7 @@ exports.handler = async (event) => {
       currency: 'EUR',
       description: `${variant.title} - ${selectedPackage.name}${attendeeName ? ` for ${attendeeName}` : ''}`,
       merchant_code: process.env.SUMUP_MERCHANT_CODE,
-      redirect_url: `${process.env.APP_URL}?status=success&ref=${encodeURIComponent(
+      redirect_url: `${getBaseAppUrl()}/${variant.id}?status=success&ref=${encodeURIComponent(
         bookingReference,
       )}`,
       hosted_checkout: { enabled: true },

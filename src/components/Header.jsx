@@ -1,6 +1,17 @@
 import flaLogo from '../assets/fla-logo.svg'
 
 function Header({ currentPage, navigate, variants }) {
+  const activeVariant =
+    variants.find((item) => item.id === currentPage) ?? variants[0] ?? null
+  const pageLabel =
+    currentPage === 'admin'
+      ? 'Admin'
+      : currentPage === 'success'
+        ? 'Confirmation'
+        : currentPage === 'cancel'
+          ? 'Payment cancelled'
+          : activeVariant?.pageLabel
+
   return (
     <header className="site-header">
       <div className="shell-section site-header__inner">
@@ -11,18 +22,12 @@ function Header({ currentPage, navigate, variants }) {
             <span className="site-header__name">FLA Checkout</span>
           </span>
         </button>
-
-        <nav className="site-header__nav" aria-label="Registration pages">
-          {variants.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-link ${currentPage === item.id ? 'is-active' : ''}`}
-              onClick={() => navigate(item.id)}
-            >
-              {item.pageLabel}
-            </button>
-          ))}
-        </nav>
+        {pageLabel ? (
+          <div className="site-header__status">
+            <span className="site-header__eyebrow">Current page</span>
+            <span className="site-header__name">{pageLabel}</span>
+          </div>
+        ) : null}
       </div>
     </header>
   )
