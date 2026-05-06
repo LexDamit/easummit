@@ -1,4 +1,9 @@
 import { useMemo, useState } from 'react'
+import {
+  countryOptions,
+  federationOptions,
+  roleOptions,
+} from '../data/participantOptions'
 
 const initialParticipant = {
   firstName: '',
@@ -247,17 +252,38 @@ function RegistrationCheckout({ variant, addonsByPackage }) {
                   </label>
                   <label className="field">
                     <span>Country</span>
-                    <input name="country" value={participant.country} onChange={(event) => handleParticipantChange(index, event)} />
+                    <select name="country" value={participant.country} onChange={(event) => handleParticipantChange(index, event)}>
+                      <option value="">Select a country</option>
+                      {countryOptions.map((option) => (
+                        <option key={option.value} value={option.label}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                     {errors[`country-${index}`] ? <span className="field__error">{errors[`country-${index}`]}</span> : null}
                   </label>
                   <label className="field">
                     <span>Member Federation</span>
-                    <input name="memberFederation" value={participant.memberFederation} onChange={(event) => handleParticipantChange(index, event)} />
+                    <select name="memberFederation" value={participant.memberFederation} onChange={(event) => handleParticipantChange(index, event)}>
+                      <option value="">Select a federation</option>
+                      {federationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                     {errors[`memberFederation-${index}`] ? <span className="field__error">{errors[`memberFederation-${index}`]}</span> : null}
                   </label>
                   <label className="field">
                     <span>Role</span>
-                    <input name="role" value={participant.role} onChange={(event) => handleParticipantChange(index, event)} />
+                    <select name="role" value={participant.role} onChange={(event) => handleParticipantChange(index, event)}>
+                      <option value="">Select a role</option>
+                      {roleOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
                     {errors[`role-${index}`] ? <span className="field__error">{errors[`role-${index}`]}</span> : null}
                   </label>
                   <label className="field">
