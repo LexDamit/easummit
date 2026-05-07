@@ -18,7 +18,9 @@ function Header({ currentPage, language, navigate, setLanguage, t, variants }) {
         <button className="site-header__brand" onClick={() => navigate('local')}>
           <img className="site-header__logo" src={flaLogo} alt="FLA logo" />
           <span>
-            <span className="site-header__eyebrow">{t.headerEyebrow}</span>
+            {t.headerEyebrow ? (
+              <span className="site-header__eyebrow">{t.headerEyebrow}</span>
+            ) : null}
             <span className="site-header__name">{t.headerTitle}</span>
           </span>
         </button>

@@ -207,7 +207,6 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
     <div className="page">
       <section className="checkout-hero shell-section">
         <div>
-          <span className="section-chip">{variant.pageLabel}</span>
           <h1 className="checkout-title">{variant.title}</h1>
           <p className="checkout-copy">{variant.description}</p>
         </div>
