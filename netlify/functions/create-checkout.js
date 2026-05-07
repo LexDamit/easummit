@@ -107,7 +107,22 @@ const validateParticipants = (participants, participantCount) => {
   )
 }
 
-const getBaseAppUrl = () => String(process.env.APP_URL || '').replace(/\/+$/, '')
+const getBaseAppUrl = (event) => {
+  const forwardedProto =
+    event.headers['x-forwarded-proto'] || event.headers['X-Forwarded-Proto']
+  const forwardedHost =
+    event.headers['x-forwarded-host'] ||
+    event.headers['X-Forwarded-Host'] ||
+    event.headers.host ||
+    event.headers.Host
+
+  if (forwardedHost) {
+    const protocol = forwardedProto || (forwardedHost.includes('localhost') ? 'http' : 'https')
+    return `${protocol}://${forwardedHost}`.replace(/\/+$/, '')
+  }
+
+  return String(process.env.APP_URL || '').replace(/\/+$/, '')
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -213,7 +228,7 @@ exports.handler = async (event) => {
       currency: 'EUR',
       description: `${variant.title} - ${selectedPackage.name}${attendeeName ? ` for ${attendeeName}` : ''}`,
       merchant_code: process.env.SUMUP_MERCHANT_CODE,
-      redirect_url: `${getBaseAppUrl()}/${variant.id}?status=success&ref=${encodeURIComponent(
+      redirect_url: `${getBaseAppUrl(event)}/${variant.id}?status=success&ref=${encodeURIComponent(
         bookingReference,
       )}`,
       hosted_checkout: { enabled: true },

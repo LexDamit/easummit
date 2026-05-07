@@ -70,9 +70,16 @@ function App() {
     () => Object.fromEntries(localizedCatalog.variants.map((item) => [item.id, item])),
     [localizedCatalog.variants],
   )
+  const adminRegistrations = adminUser ? registrations : []
 
   useEffect(() => subscribeToAdminAuth(setAdminUser), [])
-  useEffect(() => subscribeRegistrations(setRegistrations), [])
+  useEffect(() => {
+    if (!adminUser) {
+      return () => {}
+    }
+
+    return subscribeRegistrations(setRegistrations)
+  }, [adminUser])
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_KEY, language)
   }, [language])
@@ -178,7 +185,7 @@ function App() {
           hotelSettings={hotelSettings}
           onSaveHotelSettings={handleSaveHotelSettings}
           onUpdateRegistration={updateRegistrationAdmin}
-          registrations={registrations}
+          registrations={adminRegistrations}
           t={t}
         />
       )
