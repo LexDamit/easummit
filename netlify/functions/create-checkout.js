@@ -1,106 +1,6 @@
 const { cert, getApps, initializeApp } = require('firebase-admin/app')
 const { getFirestore, Timestamp } = require('firebase-admin/firestore')
 
-const fallbackCatalog = {
-  variants: [
-    {
-      id: 'local',
-      pageLabel: 'Local',
-      title: 'Local participants',
-      description:
-        'The packages below are reserved for participants from Luxembourg who hold an FLA or INAPS licence. All packages include full conference access, coffee breaks and lunch on Saturday.',
-      packageOptions: [
-        {
-          id: 'single',
-          name: 'Base package 1 person',
-          participantCount: 1,
-          baseItemName: 'Conference Access',
-          baseDescription:
-            'Includes full conference access, coffee breaks and lunch on Saturday.',
-          price: 62,
-        },
-        {
-          id: 'double',
-          name: 'Base package 2 people',
-          participantCount: 2,
-          baseItemName: 'Conference Access',
-          baseDescription:
-            'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
-          price: 124,
-        },
-      ],
-    },
-    {
-      id: 'partners',
-      pageLabel: 'Partners',
-      title: 'Partners',
-      description:
-        'Packages for partner delegates. All packages include full conference access, coffee breaks and lunch on Saturday.',
-      packageOptions: [
-        {
-          id: 'single',
-          name: 'Base package 1 person',
-          participantCount: 1,
-          baseItemName: 'Conference Access',
-          baseDescription:
-            'Includes full conference access, coffee breaks and lunch on Saturday.',
-          price: 130,
-        },
-        {
-          id: 'double',
-          name: 'Base package 2 people',
-          participantCount: 2,
-          baseItemName: 'Conference Access',
-          baseDescription:
-            'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
-          price: 260,
-        },
-      ],
-    },
-    {
-      id: 'international',
-      pageLabel: 'International',
-      title: 'International',
-      description:
-        'Packages for international participants. All packages include full conference access, coffee breaks and lunch on Saturday.',
-      packageOptions: [
-        {
-          id: 'single',
-          name: 'Base package 1 person',
-          participantCount: 1,
-          baseItemName: 'Conference Access',
-          baseDescription:
-            'Includes full conference access, coffee breaks and lunch on Saturday.',
-          price: 240,
-        },
-        {
-          id: 'double',
-          name: 'Base package 2 people',
-          participantCount: 2,
-          baseItemName: 'Conference Access',
-          baseDescription:
-            'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
-          price: 480,
-        },
-      ],
-    },
-  ],
-  addonsByPackage: {
-    single: [
-      { id: 'networking-dinner', name: 'Networking dinner (Saturday evening)', price: 60 },
-      { id: 'hotel-09-10', name: 'Hotel stay 1 night (09-10 October)', price: 130 },
-      { id: 'hotel-10-11', name: 'Hotel stay 1 night (10-11 October)', price: 130 },
-      { id: 'hotel-09-11', name: 'Hotel stay 2 nights (09-11 October)', price: 260 },
-    ],
-    double: [
-      { id: 'networking-dinner', name: 'Networking dinner (Saturday evening)', price: 120 },
-      { id: 'hotel-09-10', name: 'Hotel stay 1 night (09-10 October)', price: 150 },
-      { id: 'hotel-10-11', name: 'Hotel stay 1 night (10-11 October)', price: 150 },
-      { id: 'hotel-09-11', name: 'Hotel stay 2 nights (09-11 October)', price: 300 },
-    ],
-  },
-}
-
 const getHostedCheckoutUrl = (payload) => {
   if (!payload || typeof payload !== 'object') {
     return null
@@ -115,6 +15,22 @@ const getHostedCheckoutUrl = (payload) => {
     payload.links?.payment ||
     payload.links?.checkout
   )
+}
+
+const getOrderStatusFromPayment = (paymentStatus, paymentConfirmed) => {
+  if (paymentConfirmed) {
+    return 'confirmed'
+  }
+
+  if (String(paymentStatus || '').toLowerCase().includes('cancel')) {
+    return 'cancelled'
+  }
+
+  if (String(paymentStatus || '').toLowerCase().includes('fail')) {
+    return 'failed'
+  }
+
+  return 'pending_payment'
 }
 
 const getAdminDb = () => {
@@ -143,22 +59,28 @@ const loadTrustedCatalog = async () => {
   const db = getAdminDb()
 
   if (!db) {
-    return fallbackCatalog
+    throw new Error(
+      'Server catalog unavailable. Firebase Admin environment variables are required for checkout pricing.',
+    )
   }
 
-  try {
-    const snapshot = await db.collection('cms').doc('registrationCatalog').get()
+  const snapshot = await db.collection('cms').doc('registrationCatalog').get()
 
-    if (!snapshot.exists) {
-      return fallbackCatalog
-    }
-
-    const value = snapshot.data().value
-    return value?.variants?.length ? value : fallbackCatalog
-  } catch (error) {
-    console.error('Unable to load registration catalog from Firestore', error)
-    return fallbackCatalog
+  if (!snapshot.exists) {
+    throw new Error(
+      'Server catalog unavailable. Firestore document cms/registrationCatalog was not found.',
+    )
   }
+
+  const value = snapshot.data().value
+
+  if (!value?.variants?.length) {
+    throw new Error(
+      'Server catalog unavailable. Firestore registration catalog is empty or invalid.',
+    )
+  }
+
+  return value
 }
 
 const validateParticipants = (participants, participantCount) => {
@@ -262,7 +184,10 @@ exports.handler = async (event) => {
         participants: sanitizedParticipants,
         primaryParticipant,
         paymentStatus: 'pending',
+        paymentConfirmed: false,
+        orderStatus: getOrderStatusFromPayment('pending', false),
         paymentStage: 'checkout_created',
+        paidAt: null,
         hotelRoom: '',
         adminNotes: '',
         createdAt: Timestamp.now(),

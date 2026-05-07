@@ -38,11 +38,14 @@ function Success({ language, navigate, t }) {
     () => new URLSearchParams(window.location.search).get('ref'),
     [],
   )
+
   const leadParticipant =
     registration?.primaryParticipant ??
     registration?.participants?.[0] ??
     registration?.customer ??
     null
+
+  const paymentConfirmed = Boolean(registration?.paymentConfirmed)
 
   useEffect(() => {
     const loadRegistration = async () => {
@@ -64,13 +67,16 @@ function Success({ language, navigate, t }) {
         }
 
         setRegistration(data.registration)
-        const qr = await QRCode.toDataURL(
-          JSON.stringify({
-            ref: data.registration.bookingReference,
-            name: `${data.registration.primaryParticipant?.firstName || ''} ${data.registration.primaryParticipant?.lastName || ''}`.trim(),
-          }),
-        )
-        setQrCode(qr)
+
+        if (data.registration.paymentConfirmed) {
+          const qr = await QRCode.toDataURL(
+            JSON.stringify({
+              ref: data.registration.bookingReference,
+              name: `${data.registration.primaryParticipant?.firstName || ''} ${data.registration.primaryParticipant?.lastName || ''}`.trim(),
+            }),
+          )
+          setQrCode(qr)
+        }
       } catch (loadError) {
         setError(loadError.message || t.success.loadFailed)
       }
@@ -105,7 +111,9 @@ function Success({ language, navigate, t }) {
         <div className="ticket-summary-card">
           <span className="section-chip">{t.success.chip}</span>
           <h1 className="checkout-title">{t.success.title}</h1>
-          <p className="checkout-copy">{t.success.copy}</p>
+          <p className="checkout-copy">
+            {paymentConfirmed ? t.success.copy : t.success.pendingCopy}
+          </p>
 
           <div className="summary-line">
             <span>{t.success.reference}</span>
@@ -129,24 +137,37 @@ function Success({ language, navigate, t }) {
             <span>{t.success.total}</span>
             <strong>EUR {registration.totalAmount}</strong>
           </div>
-
-          <div className="ticket-card">
-            <div>
-              <span className="section-chip">{t.success.ticketChip}</span>
-              <h2>
-                {leadParticipant?.firstName} {leadParticipant?.lastName}
-              </h2>
-              <p>{leadParticipant?.email}</p>
-              <p>{getCountryLabel(leadParticipant?.country, language)}</p>
-              <p>
-                {registration.variantName} · {registration.packageName}
-              </p>
-              <p>{t.success.showQr}</p>
-            </div>
-            {qrCode ? (
-              <img className="ticket-card__qr" src={qrCode} alt="Ticket QR code" />
-            ) : null}
+          <div className="summary-line">
+            <span>{t.success.paymentStatus}</span>
+            <strong>
+              {paymentConfirmed ? t.success.paymentConfirmed : t.success.paymentPending}
+            </strong>
           </div>
+
+          {paymentConfirmed ? (
+            <div className="ticket-card">
+              <div>
+                <span className="section-chip">{t.success.ticketChip}</span>
+                <h2>
+                  {leadParticipant?.firstName} {leadParticipant?.lastName}
+                </h2>
+                <p>{leadParticipant?.email}</p>
+                <p>{getCountryLabel(leadParticipant?.country, language)}</p>
+                <p>
+                  {registration.variantName} · {registration.packageName}
+                </p>
+                <p>{t.success.showQr}</p>
+              </div>
+              {qrCode ? (
+                <img className="ticket-card__qr" src={qrCode} alt="Ticket QR code" />
+              ) : null}
+            </div>
+          ) : (
+            <div className="ticket-summary-card ticket-summary-card--pending">
+              <span className="section-chip">{t.success.pendingChip}</span>
+              <p className="checkout-copy">{t.success.pendingTicketNotice}</p>
+            </div>
+          )}
 
           {registration.participants?.length > 1 ? (
             <div className="ticket-addons">
@@ -155,8 +176,7 @@ function Success({ language, navigate, t }) {
                 {registration.participants.map((participant, index) => (
                   <li key={`${registration.bookingReference}-participant-${index}`}>
                     {t.admin.participantIndexed.replace('{index}', index + 1)}:{' '}
-                    {participant.firstName} {participant.lastName} -{' '}
-                    {participant.email} -{' '}
+                    {participant.firstName} {participant.lastName} - {participant.email} -{' '}
                     {getCountryLabel(participant.country, language)} -{' '}
                     {getFederationLabel(participant.memberFederation, language)} -{' '}
                     {getRoleLabel(participant.role, language)}

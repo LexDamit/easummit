@@ -87,6 +87,106 @@ function ParticipantPathIcon({ count }) {
   )
 }
 
+function SearchableSelect({
+  name,
+  value,
+  options,
+  placeholder,
+  onChange,
+}) {
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+
+  const selectedOption = useMemo(
+    () => options.find((option) => option.value === value) || null,
+    [options, value],
+  )
+
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return options.slice(0, 12)
+    }
+
+    return options
+      .filter((option) => option.label.toLowerCase().includes(normalizedQuery))
+      .slice(0, 12)
+  }, [options, query])
+
+  const handlePick = (optionValue) => {
+    onChange({
+      target: {
+        name,
+        value: optionValue,
+      },
+    })
+    setIsOpen(false)
+  }
+
+  return (
+    <div
+      className={`searchable-select ${isOpen ? 'is-open' : ''}`}
+      onBlur={() => {
+        window.setTimeout(() => {
+          setIsOpen(false)
+          setQuery(selectedOption?.label || '')
+        }, 120)
+      }}
+    >
+      <input
+        name={name}
+        value={isOpen ? query : selectedOption?.label || query}
+        placeholder={placeholder}
+        autoComplete="off"
+        onFocus={() => setIsOpen(true)}
+        onChange={(event) => {
+          setQuery(event.target.value)
+          setIsOpen(true)
+          if (!event.target.value.trim()) {
+            onChange({
+              target: {
+                name,
+                value: '',
+              },
+            })
+          }
+        }}
+      />
+      <button
+        className="searchable-select__toggle"
+        type="button"
+        aria-label="Toggle options"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        ▾
+      </button>
+      {isOpen ? (
+        <div className="searchable-select__menu">
+          {filteredOptions.length ? (
+            filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                className={`searchable-select__option ${
+                  option.value === value ? 'is-selected' : ''
+                }`}
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => handlePick(option.value)}
+              >
+                {option.label}
+              </button>
+            ))
+          ) : (
+            <div className="searchable-select__empty">No result</div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   const [packageType, setPackageType] = useState('single')
   const [participants, setParticipants] = useState([
@@ -403,18 +503,13 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
                   </label>
                   <label className="field">
                     <span>{t.checkout.country}</span>
-                    <select
+                    <SearchableSelect
                       name="country"
                       value={participant.country}
+                      options={countryOptions}
+                      placeholder={t.checkout.selectCountry}
                       onChange={(event) => handleParticipantChange(index, event)}
-                    >
-                      <option value="">{t.checkout.selectCountry}</option>
-                      {countryOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                     {errors[`country-${index}`] ? (
                       <span className="field__error">
                         {errors[`country-${index}`]}
@@ -423,18 +518,13 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
                   </label>
                   <label className="field">
                     <span>{t.checkout.memberFederation}</span>
-                    <select
+                    <SearchableSelect
                       name="memberFederation"
                       value={participant.memberFederation}
+                      options={federationOptions}
+                      placeholder={t.checkout.selectFederation}
                       onChange={(event) => handleParticipantChange(index, event)}
-                    >
-                      <option value="">{t.checkout.selectFederation}</option>
-                      {federationOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                     {errors[`memberFederation-${index}`] ? (
                       <span className="field__error">
                         {errors[`memberFederation-${index}`]}

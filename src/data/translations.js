@@ -23,8 +23,6 @@ const uiTranslations = {
       packageIntroLabel: 'Registration package',
       packageSelectionHelp:
         'Choose whether you want to complete one registration for 1 participant or one registration for 2 participants together.',
-      singlePathLabel: 'Book 1 participant',
-      doublePathLabel: 'Book 2 participants together',
       participantsIncluded: '{count} participant included',
       participantsIncludedPlural: '{count} participants included',
       packageHeroPrefix: 'Package Coaching Summit: ',
@@ -51,9 +49,6 @@ const uiTranslations = {
       preferNotToSay: 'Prefer not to say',
       orderSummary: 'Order summary',
       orderSummaryEyebrow: 'Live total',
-      summitLabel: 'European Athletics Coaching Summit',
-      registrationFlow: 'Registration flow',
-      locationLabel: 'Luxembourg',
       total: 'Total',
       participantCount: '{count} participant',
       participantCountPlural: '{count} participants',
@@ -82,9 +77,7 @@ const uiTranslations = {
           'Reserved for participants from Luxembourg.',
           'Valid for FLA or INAPS licence holders.',
         ],
-        partners: [
-          'Reserved for FFA, GEFA or Swiss Athletics licence holders.',
-        ],
+        partners: ['Reserved for FFA, GEFA or Swiss Athletics licence holders.'],
         international: [],
       },
       includesByVariant: {
@@ -103,13 +96,21 @@ const uiTranslations = {
       chip: 'Order summary',
       title: 'Your registration has been created.',
       copy:
-        'Payment return received. Final payment confirmation can still be verified by the team.',
+        'Payment return received. Final payment confirmation has been received.',
+      pendingCopy:
+        'Your registration has been created, but it only becomes valid once the payment is confirmed.',
       reference: 'Reference',
       participant: 'Participant',
       category: 'Category',
       package: 'Package',
       total: 'Total',
+      paymentStatus: 'Payment status',
+      paymentConfirmed: 'Confirmed',
+      paymentPending: 'Pending confirmation',
       ticketChip: 'Official ticket',
+      pendingChip: 'Awaiting payment confirmation',
+      pendingTicketNotice:
+        'The official ticket and QR code will become available once the payment has been confirmed.',
       showQr: 'Show this QR code on arrival.',
       participants: 'Participants',
       addons: 'Add-ons',
@@ -176,7 +177,7 @@ const uiTranslations = {
     currentPageSuccess: 'Confirmation',
     currentPageCancel: 'Paiement annulé',
     footerText:
-      "Inscription conférence, options, billets et suivi administratif en direct.",
+      "Inscription conference, options, billets et suivi administratif en direct.",
     adminLogin: 'Connexion admin',
     notices: {
       offline:
@@ -189,8 +190,6 @@ const uiTranslations = {
       packageIntroLabel: "Package d'inscription",
       packageSelectionHelp:
         'Choisissez si vous souhaitez finaliser une inscription pour 1 participant ou une inscription commune pour 2 participants.',
-      singlePathLabel: 'Inscrire 1 participant',
-      doublePathLabel: 'Inscrire 2 participants ensemble',
       participantsIncluded: '{count} participant inclus',
       participantsIncludedPlural: '{count} participants inclus',
       packageHeroPrefix: 'Package Coaching Summit : ',
@@ -217,9 +216,6 @@ const uiTranslations = {
       preferNotToSay: 'Préfère ne pas répondre',
       orderSummary: 'Récapitulatif',
       orderSummaryEyebrow: 'Total en direct',
-      summitLabel: 'European Athletics Coaching Summit',
-      registrationFlow: "Parcours d'inscription",
-      locationLabel: 'Luxembourg',
       total: 'Total',
       participantCount: '{count} participant',
       participantCountPlural: '{count} participants',
@@ -248,9 +244,7 @@ const uiTranslations = {
           'Réservé aux participants du Luxembourg.',
           'Valable pour les titulaires d’une licence FLA ou INAPS.',
         ],
-        partners: [
-          'Réservé aux licenciés de la FFA, de la GEFA ou de Swiss Athletics.',
-        ],
+        partners: ['Réservé aux licenciés de la FFA, de la GEFA ou de Swiss Athletics.'],
         international: [],
       },
       includesByVariant: {
@@ -269,13 +263,21 @@ const uiTranslations = {
       chip: 'Récapitulatif',
       title: 'Votre inscription a été créée.',
       copy:
-        "Le retour de paiement a été reçu. La confirmation finale du paiement peut encore être vérifiée par l'équipe.",
+        "Le retour de paiement a été reçu. La confirmation finale du paiement a bien été reçue.",
+      pendingCopy:
+        "Votre inscription a bien été créée, mais elle ne sera valide qu'une fois le paiement confirmé.",
       reference: 'Référence',
       participant: 'Participant',
       category: 'Catégorie',
       package: 'Package',
       total: 'Total',
+      paymentStatus: 'Statut du paiement',
+      paymentConfirmed: 'Confirmé',
+      paymentPending: 'En attente de confirmation',
       ticketChip: 'Billet officiel',
+      pendingChip: 'En attente de confirmation du paiement',
+      pendingTicketNotice:
+        'Le billet officiel et le QR code seront disponibles une fois le paiement confirmé.',
       showQr: "Présentez ce QR code à l'arrivée.",
       participants: 'Participants',
       addons: 'Options',
@@ -286,7 +288,7 @@ const uiTranslations = {
       title: "Le paiement n'a pas été finalisé.",
       copy:
         "L'inscription est encore incomplète. Vous pouvez revenir sur l'une des pages d'inscription et réessayer.",
-      back: "Retour aux inscriptions",
+      back: 'Retour aux inscriptions',
     },
     admin: {
       firebaseMissingTitle: "Firebase n'est pas configuré.",
@@ -412,9 +414,9 @@ const catalogTranslations = {
     },
     addons: {
       'networking-dinner': 'Dîner networking (samedi soir)',
-      'hotel-09-10': "Séjour hôtel 1 nuit (09-10 octobre)",
-      'hotel-10-11': "Séjour hôtel 1 nuit (10-11 octobre)",
-      'hotel-09-11': "Séjour hôtel 2 nuits (09-11 octobre)",
+      'hotel-09-10': 'Séjour hôtel 1 nuit (09-10 octobre)',
+      'hotel-10-11': 'Séjour hôtel 1 nuit (10-11 octobre)',
+      'hotel-09-11': 'Séjour hôtel 2 nuits (09-11 octobre)',
     },
   },
 }

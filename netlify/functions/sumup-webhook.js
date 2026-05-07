@@ -23,6 +23,43 @@ const getAdminDb = () => {
   return getFirestore()
 }
 
+const normalizePaymentState = (payload) => {
+  const rawStatus = String(
+    payload.status ||
+      payload.transaction_status ||
+      payload.payment_status ||
+      payload.state ||
+      'webhook_received',
+  ).toLowerCase()
+
+  const isPaid =
+    rawStatus.includes('paid') ||
+    rawStatus.includes('success') ||
+    rawStatus.includes('completed') ||
+    rawStatus.includes('settled')
+
+  const isCancelled =
+    rawStatus.includes('cancel') || rawStatus.includes('expired')
+
+  const isFailed =
+    rawStatus.includes('fail') ||
+    rawStatus.includes('declin') ||
+    rawStatus.includes('error')
+
+  return {
+    paymentStatus: rawStatus,
+    paymentConfirmed: isPaid,
+    orderStatus: isPaid
+      ? 'confirmed'
+      : isCancelled
+        ? 'cancelled'
+        : isFailed
+          ? 'failed'
+          : 'pending_payment',
+    paidAt: isPaid ? Timestamp.now() : null,
+  }
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -44,10 +81,15 @@ exports.handler = async (event) => {
     console.log('Incoming SumUp webhook payload:', payload)
 
     if (db && bookingReference) {
+      const normalizedState = normalizePaymentState(payload)
+
       await db.collection('registrations').doc(bookingReference).set(
         {
-          paymentStatus: payload.status || payload.transaction_status || 'webhook_received',
+          paymentStatus: normalizedState.paymentStatus,
+          paymentConfirmed: normalizedState.paymentConfirmed,
+          orderStatus: normalizedState.orderStatus,
           paymentStage: 'webhook_received',
+          paidAt: normalizedState.paidAt,
           webhookPayload: payload,
           updatedAt: Timestamp.now(),
         },

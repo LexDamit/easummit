@@ -8,6 +8,10 @@ import {
 const ADMIN_TABS = ['definitions', 'registrations', 'finance', 'hotels']
 
 const isPaidStatus = (value) => {
+  if (typeof value === 'object' && value !== null) {
+    return Boolean(value.paymentConfirmed)
+  }
+
   const status = String(value || '').toLowerCase()
   return (
     status.includes('paid') ||
@@ -431,7 +435,10 @@ function Admin({
   const selectedRegistration = selectedRegistrationRow?.registration || null
 
   const paidRegistrations = useMemo(
-    () => adminRegistrations.filter((item) => isPaidStatus(item.paymentStatus)),
+    () =>
+      adminRegistrations.filter((item) =>
+        item.paymentConfirmed ? true : isPaidStatus(item.paymentStatus),
+      ),
     [adminRegistrations],
   )
 
@@ -450,13 +457,20 @@ function Admin({
   const selectedFinanceRegistrations = useMemo(
     () =>
       adminRegistrations.filter((item) =>
-        selectedFinanceIds.length ? selectedFinanceIds.includes(item.id) : isPaidStatus(item.paymentStatus),
+        selectedFinanceIds.length
+          ? selectedFinanceIds.includes(item.id)
+          : item.paymentConfirmed || isPaidStatus(item.paymentStatus),
       ),
     [adminRegistrations, selectedFinanceIds],
   )
 
   const hotelAssignments = useMemo(
-    () => adminRegistrations.filter((item) => registrationNeedsHotel(item)),
+    () =>
+      adminRegistrations.filter(
+        (item) =>
+          registrationNeedsHotel(item) &&
+          (item.paymentConfirmed || isPaidStatus(item.paymentStatus)),
+      ),
     [adminRegistrations],
   )
 

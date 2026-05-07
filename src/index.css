@@ -649,6 +649,65 @@ textarea {
   color: var(--text);
 }
 
+.searchable-select {
+  position: relative;
+}
+
+.searchable-select input {
+  padding-right: 3rem;
+}
+
+.searchable-select__toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.searchable-select__menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  z-index: 25;
+  max-height: 280px;
+  overflow: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.searchable-select__option,
+.searchable-select__empty {
+  width: 100%;
+  padding: 0.75rem 0.8rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+}
+
+.searchable-select__option {
+  cursor: pointer;
+}
+
+.searchable-select__option:hover,
+.searchable-select__option.is-selected {
+  background: rgba(23, 87, 166, 0.08);
+  color: var(--accent-dark);
+}
+
+.searchable-select__empty {
+  color: var(--muted);
+}
+
 .field textarea {
   min-height: 120px;
 }
