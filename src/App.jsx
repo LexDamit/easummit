@@ -6,12 +6,15 @@ import Success from './pages/Success'
 import Cancel from './pages/Cancel'
 import Admin from './pages/Admin'
 import { defaultRegistrationCatalog } from './data/registrationCatalog'
+import { defaultHotelSettings } from './data/hotelSettings'
 import { getUiTranslations, localizeCatalog } from './data/translations'
 import {
   firebaseDebugInfo,
   firebaseEnabled,
   firebaseInitializationError,
+  loadHotelSettings,
   loadRegistrationCatalog,
+  saveHotelSettings,
   saveRegistrationCatalog,
   signInAdmin,
   signOutAdmin,
@@ -51,6 +54,7 @@ function App() {
   const [catalog, setCatalog] = useState(defaultRegistrationCatalog)
   const [adminUser, setAdminUser] = useState(null)
   const [registrations, setRegistrations] = useState([])
+  const [hotelSettings, setHotelSettings] = useState(defaultHotelSettings)
   const [catalogNotice, setCatalogNotice] = useState('')
   const showFirebaseDebug = useMemo(
     () => new URLSearchParams(window.location.search).get('debugFirebase') === '1',
@@ -87,12 +91,19 @@ function App() {
   useEffect(() => {
     let cancelled = false
 
-    const loadCatalog = async () => {
+    const loadAdminContent = async () => {
       try {
-        const remoteCatalog = await loadRegistrationCatalog()
+        const [remoteCatalog, remoteHotelSettings] = await Promise.all([
+          loadRegistrationCatalog(),
+          loadHotelSettings(),
+        ])
 
         if (!cancelled && remoteCatalog?.variants?.length) {
           setCatalog(remoteCatalog)
+        }
+
+        if (!cancelled && remoteHotelSettings?.hotels) {
+          setHotelSettings(remoteHotelSettings)
         }
       } catch (error) {
         const message = String(error?.message || '')
@@ -112,7 +123,7 @@ function App() {
       }
     }
 
-    loadCatalog()
+    loadAdminContent()
 
     return () => {
       cancelled = true
@@ -140,6 +151,11 @@ function App() {
     setCatalog(nextCatalog)
   }
 
+  const handleSaveHotelSettings = async (nextHotelSettings) => {
+    await saveHotelSettings(nextHotelSettings)
+    setHotelSettings(nextHotelSettings)
+  }
+
   const renderPage = () => {
     if (page === 'success') {
       return <Success language={language} navigate={navigate} t={t} />
@@ -159,6 +175,8 @@ function App() {
           onLogin={signInAdmin}
           onLogout={signOutAdmin}
           onSaveCatalog={handleSaveCatalog}
+          hotelSettings={hotelSettings}
+          onSaveHotelSettings={handleSaveHotelSettings}
           onUpdateRegistration={updateRegistrationAdmin}
           registrations={registrations}
           t={t}

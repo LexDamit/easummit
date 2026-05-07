@@ -1,36 +1,22 @@
 import flaLogo from '../assets/fla-logo.svg'
 
-function Header({ currentPage, language, navigate, setLanguage, t, variants }) {
-  const activeVariant =
-    variants.find((item) => item.id === currentPage) ?? variants[0] ?? null
-  const pageLabel =
-    currentPage === 'admin'
-      ? t.currentPageAdmin
-      : currentPage === 'success'
-        ? t.currentPageSuccess
-        : currentPage === 'cancel'
-          ? t.currentPageCancel
-          : activeVariant?.pageLabel
-
+function Header({ language, setLanguage, t }) {
   return (
     <header className="site-header">
       <div className="shell-section site-header__inner">
-        <button className="site-header__brand" onClick={() => navigate('local')}>
+        <div className="site-header__brand">
           <img className="site-header__logo" src={flaLogo} alt="FLA logo" />
-          <span>
+          <div className="site-header__brand-copy">
             {t.headerEyebrow ? (
               <span className="site-header__eyebrow">{t.headerEyebrow}</span>
             ) : null}
             <span className="site-header__name">{t.headerTitle}</span>
-          </span>
-        </button>
+            {t.headerSubtitle ? (
+              <span className="site-header__subtitle">{t.headerSubtitle}</span>
+            ) : null}
+          </div>
+        </div>
         <div className="site-header__meta">
-          {pageLabel ? (
-            <div className="site-header__status">
-              <span className="site-header__eyebrow">{t.currentPage}</span>
-              <span className="site-header__name">{pageLabel}</span>
-            </div>
-          ) : null}
           <div className="language-switch" aria-label={t.languageLabel}>
             <button
               className={`language-switch__button ${language === 'fr' ? 'is-active' : ''}`}

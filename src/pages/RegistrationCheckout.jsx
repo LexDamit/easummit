@@ -63,6 +63,30 @@ const getAddonDescription = (packageType, addonId, t) => {
   return t.checkout.optionalAddon
 }
 
+function ParticipantPathIcon({ count }) {
+  if (count > 1) {
+    return (
+      <span className="participant-path-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48" focusable="false">
+          <circle cx="17" cy="16" r="5.5" />
+          <circle cx="31" cy="16" r="5.5" opacity="0.85" />
+          <path d="M8.5 34.5c0-5 3.9-9 8.8-9h.2c4.9 0 8.8 4 8.8 9" />
+          <path d="M21.7 34.5c0-5 3.9-9 8.8-9h.2c4.9 0 8.8 4 8.8 9" opacity="0.85" />
+        </svg>
+      </span>
+    )
+  }
+
+  return (
+    <span className="participant-path-icon" aria-hidden="true">
+      <svg viewBox="0 0 48 48" focusable="false">
+        <circle cx="24" cy="16" r="6" />
+        <path d="M14 34.5c0-5.5 4.3-10 9.8-10h.4c5.5 0 9.8 4.5 9.8 10" />
+      </svg>
+    </span>
+  )
+}
+
 function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   const [packageType, setPackageType] = useState('single')
   const [participants, setParticipants] = useState([
@@ -87,6 +111,8 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
     [language],
   )
   const roleOptions = useMemo(() => getRoleOptions(language), [language])
+  const conditionItems = t.checkout.conditionsByVariant?.[variant.id] || []
+  const includesCopy = t.checkout.includesByVariant?.[variant.id] || ''
 
   const selectedAddonObjects = useMemo(
     () => activeAddons.filter((item) => selectedAddons.includes(item.id)),
@@ -101,6 +127,15 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   )
 
   const participantCount = selectedPackage?.participantCount || 1
+  const participantSections = Array.from({ length: participantCount })
+
+  const getParticipantIncludedLabel = (item) =>
+    item.participantCount > 1
+      ? t.checkout.participantsIncludedPlural.replace(
+          '{count}',
+          item.participantCount,
+        )
+      : t.checkout.participantsIncluded.replace('{count}', item.participantCount)
 
   const handleParticipantChange = (index, event) => {
     const { name, value } = event.target
@@ -206,16 +241,45 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   return (
     <div className="page">
       <section className="checkout-hero shell-section">
-        <div>
-          <h1 className="checkout-title">{variant.title}</h1>
-          <p className="checkout-copy">{variant.description}</p>
+        <div className="checkout-hero__headline">
+          <span className="checkout-hero__eyebrow">{t.checkout.packageIntroLabel}</span>
+          <h1 className="checkout-title checkout-title--inline">
+            {t.checkout.packageHeroPrefix}
+            <span className="checkout-title__accent checkout-title__accent--inline">
+              {variant.title}
+            </span>
+          </h1>
+        </div>
+        <div className="checkout-info-grid">
+          {conditionItems.length ? (
+            <div className="checkout-info-card">
+              <span className="checkout-conditions-label">{t.checkout.eligibilityLabel}</span>
+              <ul className="checkout-conditions">
+                {conditionItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {includesCopy ? (
+            <div className="checkout-info-card checkout-info-card--soft">
+              <span className="checkout-conditions-label">{t.checkout.includesLabel}</span>
+              <p className="checkout-includes-note">{includesCopy}</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
       <section className="shell-section checkout-grid">
         <form className="checkout-form-card" onSubmit={handleSubmit}>
           <div className="checkout-section">
-            <h2>{t.checkout.packageSelection}</h2>
+            <div className="checkout-section__header">
+              <span className="checkout-section__index">01</span>
+              <div className="checkout-section__heading-block">
+                <h2>{t.checkout.packageSelection}</h2>
+                <p className="checkout-section__help">{t.checkout.packageSelectionHelp}</p>
+              </div>
+            </div>
             <div className="addon-grid">
               {packageOptions.map((item) => {
                 const isSelected = item.id === packageType
@@ -229,11 +293,20 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
                     type="button"
                     onClick={() => handlePackageChange(item.id)}
                   >
-                    <div>
+                    <div className="selection-card__body">
+                      <div className="selection-card__visual-row">
+                        <ParticipantPathIcon count={item.participantCount} />
+                        <span className="selection-card__count-badge">
+                          {item.participantCount > 1 ? '2P' : '1P'}
+                        </span>
+                      </div>
                       <strong>{item.name}</strong>
                       <p>{item.baseDescription}</p>
+                      <span className="selection-card__meta">
+                        {getParticipantIncludedLabel(item)}
+                      </span>
                     </div>
-                    <span>EUR {item.price}</span>
+                    <span className="selection-card__price">EUR {item.price}</span>
                   </button>
                 )
               })}
@@ -241,7 +314,10 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
           </div>
 
           <div className="checkout-section">
-            <h2>{t.checkout.addons}</h2>
+            <div className="checkout-section__header">
+              <span className="checkout-section__index">02</span>
+              <h2>{t.checkout.addons}</h2>
+            </div>
             <div className="addon-stack">
               {activeAddons.map((addon) => {
                 const isSelected = selectedAddons.includes(addon.id)
@@ -266,7 +342,7 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
             </div>
           </div>
 
-          {Array.from({ length: participantCount }).map((_, index) => {
+          {participantSections.map((_, index) => {
             const participant = participants[index]
             const title =
               participantCount === 2
@@ -278,7 +354,12 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
 
             return (
               <div className="checkout-section" key={`participant-${index}`}>
-                <h2>{title}</h2>
+                <div className="checkout-section__header">
+                  <span className="checkout-section__index">
+                    {String(index + 3).padStart(2, '0')}
+                  </span>
+                  <h2>{title}</h2>
+                </div>
                 <div className="form-grid">
                   <label className="field">
                     <span>{t.checkout.firstName}</span>
@@ -414,6 +495,7 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
         </form>
 
         <aside className="order-summary-card">
+          <span className="order-summary-card__eyebrow">{t.checkout.orderSummaryEyebrow}</span>
           <h2>{t.checkout.orderSummary}</h2>
           <div className="summary-line">
             <span>{selectedPackage?.name}</span>

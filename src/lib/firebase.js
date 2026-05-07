@@ -114,6 +114,15 @@ export async function loadRegistrationCatalog() {
   return snapshot.exists() ? snapshot.data().value ?? null : null
 }
 
+export async function loadHotelSettings() {
+  if (!db) {
+    return null
+  }
+
+  const snapshot = await getDoc(doc(db, 'cms', 'hotelSettings'))
+  return snapshot.exists() ? snapshot.data().value ?? null : null
+}
+
 export async function saveRegistrationCatalog(catalog) {
   if (!db) {
     throw new Error(firebaseInitError || 'Firebase firestore is not configured.')
@@ -123,6 +132,21 @@ export async function saveRegistrationCatalog(catalog) {
     doc(db, 'cms', 'registrationCatalog'),
     {
       value: catalog,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  )
+}
+
+export async function saveHotelSettings(hotelSettings) {
+  if (!db) {
+    throw new Error(firebaseInitError || 'Firebase firestore is not configured.')
+  }
+
+  await setDoc(
+    doc(db, 'cms', 'hotelSettings'),
+    {
+      value: hotelSettings,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
