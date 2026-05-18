@@ -320,6 +320,7 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
           variantId: variant.id,
           packageType,
           addonIds: selectedAddons,
+          language,
           participants: participants.slice(0, participantCount),
         }),
       })

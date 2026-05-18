@@ -1,39 +1,6 @@
-const { cert, getApps, initializeApp } = require('firebase-admin/app')
-const { getFirestore, Timestamp } = require('firebase-admin/firestore')
-
-const normalizePrivateKey = (value) => {
-  if (!value) {
-    return value
-  }
-
-  return String(value)
-    .trim()
-    .replace(/^"(.*)"$/s, '$1')
-    .replace(/^'(.*)'$/s, '$1')
-    .replace(/\\n/g, '\n')
-}
-
-const getAdminDb = () => {
-  if (
-    !process.env.FIREBASE_PROJECT_ID ||
-    !process.env.FIREBASE_CLIENT_EMAIL ||
-    !process.env.FIREBASE_PRIVATE_KEY
-  ) {
-    return null
-  }
-
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
-      }),
-    })
-  }
-
-  return getFirestore()
-}
+const { Timestamp } = require('firebase-admin/firestore')
+const { getAdminDb } = require('./_lib/firebase-admin')
+const { sendConfirmationEmail } = require('./_lib/resend')
 
 const normalizePaymentState = (payload) => {
   const rawStatus = String(
@@ -72,6 +39,33 @@ const normalizePaymentState = (payload) => {
   }
 }
 
+const fetchCheckoutFromSumUp = async (checkoutId) => {
+  if (!checkoutId || !process.env.SUMUP_API_KEY) {
+    return null
+  }
+
+  const response = await fetch(
+    `https://api.sumup.com/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${process.env.SUMUP_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    },
+  )
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || data.error || 'Unable to verify SumUp checkout status.',
+    )
+  }
+
+  return data
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -83,30 +77,136 @@ exports.handler = async (event) => {
 
   try {
     const payload = JSON.parse(event.body || '{}')
-    const bookingReference =
+    const payloadReference =
       payload.checkout_reference ||
       payload.checkoutReference ||
       payload.reference ||
       null
+    const checkoutId = payload.id || payload.checkout_id || payload.checkoutId || null
     const db = getAdminDb()
 
     console.log('Incoming SumUp webhook payload:', payload)
 
-    if (db && bookingReference) {
-      const normalizedState = normalizePaymentState(payload)
+    if (db) {
+      const verifiedCheckout =
+        payload.event_type === 'CHECKOUT_STATUS_CHANGED' || checkoutId
+          ? await fetchCheckoutFromSumUp(checkoutId)
+          : null
+      const bookingReference =
+        verifiedCheckout?.checkout_reference || payloadReference || null
+      const normalizedState = normalizePaymentState(verifiedCheckout || payload)
 
-      await db.collection('registrations').doc(bookingReference).set(
-        {
-          paymentStatus: normalizedState.paymentStatus,
-          paymentConfirmed: normalizedState.paymentConfirmed,
-          orderStatus: normalizedState.orderStatus,
-          paymentStage: 'webhook_received',
-          paidAt: normalizedState.paidAt,
-          webhookPayload: payload,
-          updatedAt: Timestamp.now(),
-        },
-        { merge: true },
-      )
+      if (!bookingReference) {
+        throw new Error('Webhook payload could not be matched to a booking reference.')
+      }
+
+      const docRef = db.collection('registrations').doc(bookingReference)
+      let snapshot = await docRef.get()
+      let existingRegistration = snapshot.exists ? snapshot.data() : null
+
+      if (!existingRegistration && checkoutId) {
+        const byCheckoutQuery = await db
+          .collection('registrations')
+          .where('sumupCheckoutId', '==', checkoutId)
+          .limit(1)
+          .get()
+
+        if (!byCheckoutQuery.empty) {
+          snapshot = byCheckoutQuery.docs[0]
+          existingRegistration = snapshot.data()
+        }
+      }
+
+      if (!existingRegistration) {
+        throw new Error('Webhook received for an unknown registration.')
+      }
+
+      const registrationRef =
+        snapshot.ref || db.collection('registrations').doc(bookingReference)
+      const updatePayload = {
+        paymentStatus: normalizedState.paymentStatus,
+        paymentConfirmed: normalizedState.paymentConfirmed,
+        orderStatus: normalizedState.orderStatus,
+        paymentStage: 'webhook_received',
+        paidAt:
+          normalizedState.paidAt ||
+          existingRegistration?.paidAt ||
+          null,
+        sumupCheckoutId:
+          verifiedCheckout?.id ||
+          checkoutId ||
+          existingRegistration?.sumupCheckoutId ||
+          null,
+        transactionId:
+          verifiedCheckout?.transaction_id ||
+          payload.transaction_id ||
+          existingRegistration?.transactionId ||
+          null,
+        webhookPayload: payload,
+        verifiedCheckoutPayload: verifiedCheckout || null,
+        updatedAt: Timestamp.now(),
+      }
+
+      await registrationRef.set(updatePayload, { merge: true })
+
+      const canSendConfirmation =
+        normalizedState.paymentConfirmed &&
+        existingRegistration &&
+        !existingRegistration?.confirmationEmail?.sentAt
+
+      if (canSendConfirmation) {
+        const mergedRegistration = {
+          ...existingRegistration,
+          ...updatePayload,
+          bookingReference,
+        }
+
+        try {
+          const emailResult = await sendConfirmationEmail({
+            registration: mergedRegistration,
+            baseUrl: process.env.APP_URL,
+          })
+
+          await registrationRef.set(
+            {
+              confirmationEmail: {
+                deliveryState: emailResult.skipped ? 'skipped' : 'sent',
+                sentAt: emailResult.skipped ? null : Timestamp.now(),
+                lastAttemptAt: Timestamp.now(),
+                emailId: emailResult.emailId || null,
+                to: emailResult.to || null,
+                skippedReason: emailResult.reason || null,
+                error: null,
+              },
+              updatedAt: Timestamp.now(),
+            },
+            { merge: true },
+          )
+        } catch (emailError) {
+          console.error('confirmation-email error', emailError)
+
+          await registrationRef.set(
+            {
+              confirmationEmail: {
+                deliveryState: 'failed',
+                sentAt: null,
+                lastAttemptAt: Timestamp.now(),
+                emailId: null,
+                to:
+                  existingRegistration?.primaryParticipant?.email ||
+                  existingRegistration?.participants?.[0]?.email ||
+                  null,
+                skippedReason: null,
+                error:
+                  emailError.message ||
+                  'Unable to send confirmation email.',
+              },
+              updatedAt: Timestamp.now(),
+            },
+            { merge: true },
+          )
+        }
+      }
     }
 
     // TODO: Verify the SumUp webhook signature or signing secret for production.

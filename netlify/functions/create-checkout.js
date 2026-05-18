@@ -1,5 +1,5 @@
-const { cert, getApps, initializeApp } = require('firebase-admin/app')
-const { getFirestore, Timestamp } = require('firebase-admin/firestore')
+const { Timestamp } = require('firebase-admin/firestore')
+const { getAdminDb } = require('./_lib/firebase-admin')
 
 const getHostedCheckoutUrl = (payload) => {
   if (!payload || typeof payload !== 'object') {
@@ -31,40 +31,6 @@ const getOrderStatusFromPayment = (paymentStatus, paymentConfirmed) => {
   }
 
   return 'pending_payment'
-}
-
-const normalizePrivateKey = (value) => {
-  if (!value) {
-    return value
-  }
-
-  return String(value)
-    .trim()
-    .replace(/^"(.*)"$/s, '$1')
-    .replace(/^'(.*)'$/s, '$1')
-    .replace(/\\n/g, '\n')
-}
-
-const getAdminDb = () => {
-  if (
-    !process.env.FIREBASE_PROJECT_ID ||
-    !process.env.FIREBASE_CLIENT_EMAIL ||
-    !process.env.FIREBASE_PRIVATE_KEY
-  ) {
-    return null
-  }
-
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY),
-      }),
-    })
-  }
-
-  return getFirestore()
 }
 
 const loadTrustedCatalog = async () => {
@@ -124,6 +90,17 @@ const getBaseAppUrl = (event) => {
   return String(process.env.APP_URL || '').replace(/\/+$/, '')
 }
 
+const getWebhookBaseUrl = (event) => {
+  const baseUrl = getBaseAppUrl(event)
+  const forcedUrl = String(process.env.WEBHOOK_BASE_URL || '').replace(/\/+$/, '')
+
+  if (forcedUrl) {
+    return forcedUrl
+  }
+
+  return baseUrl
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
@@ -139,6 +116,7 @@ exports.handler = async (event) => {
       packageType = 'single',
       addonIds = [],
       participants = [],
+      language = 'en',
     } = JSON.parse(event.body || '{}')
 
     const catalog = await loadTrustedCatalog()
@@ -208,6 +186,7 @@ exports.handler = async (event) => {
         addons,
         totalAmount,
         currency: 'EUR',
+        language: language === 'fr' ? 'fr' : 'en',
         participants: sanitizedParticipants,
         primaryParticipant,
         paymentStatus: 'pending',
@@ -228,6 +207,7 @@ exports.handler = async (event) => {
       currency: 'EUR',
       description: `${variant.title} - ${selectedPackage.name}${attendeeName ? ` for ${attendeeName}` : ''}`,
       merchant_code: process.env.SUMUP_MERCHANT_CODE,
+      return_url: `${getWebhookBaseUrl(event)}/.netlify/functions/sumup-webhook`,
       redirect_url: `${getBaseAppUrl(event)}/${variant.id}?status=success&ref=${encodeURIComponent(
         bookingReference,
       )}`,

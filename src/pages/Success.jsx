@@ -46,6 +46,7 @@ function Success({ language, navigate, t }) {
     null
 
   const paymentConfirmed = Boolean(registration?.paymentConfirmed)
+  const confirmationEmailSent = Boolean(registration?.confirmationEmail?.sentAt)
 
   useEffect(() => {
     const loadRegistration = async () => {
@@ -114,6 +115,9 @@ function Success({ language, navigate, t }) {
           <p className="checkout-copy">
             {paymentConfirmed ? t.success.copy : t.success.pendingCopy}
           </p>
+          {paymentConfirmed && confirmationEmailSent ? (
+            <p className="checkout-copy">{t.success.emailSent}</p>
+          ) : null}
 
           <div className="summary-line">
             <span>{t.success.reference}</span>

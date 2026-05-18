@@ -97,6 +97,8 @@ const uiTranslations = {
       title: 'Your registration has been created.',
       copy:
         'Payment return received. Final payment confirmation has been received.',
+      emailSent:
+        'Your official confirmation and ticket have been sent to your email address.',
       pendingCopy:
         'Your registration has been created, but it only becomes valid once the payment is confirmed.',
       reference: 'Reference',
@@ -264,6 +266,8 @@ const uiTranslations = {
       title: 'Votre inscription a été créée.',
       copy:
         "Le retour de paiement a été reçu. La confirmation finale du paiement a bien été reçue.",
+      emailSent:
+        'Votre confirmation officielle et votre billet ont été envoyés par email.',
       pendingCopy:
         "Votre inscription a bien été créée, mais elle ne sera valide qu'une fois le paiement confirmé.",
       reference: 'Référence',
