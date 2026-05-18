@@ -114,6 +114,14 @@ const uiTranslations = {
       pendingTicketNotice:
         'The official ticket and QR code will become available once the payment has been confirmed.',
       showQr: 'Show this QR code on arrival.',
+      printTicket: 'Print / Save as PDF',
+      downloadTicket: 'Download ticket',
+      posterChip: 'Event poster',
+      posterTitle: 'Summit poster preview',
+      posterCopy:
+        'Use the poster as a quick visual reference for your event communication and check-in desk.',
+      posterFallback: 'Open the summit poster',
+      posterOpen: 'Open poster',
       participants: 'Participants',
       addons: 'Add-ons',
       newRegistration: 'New registration',
@@ -283,6 +291,14 @@ const uiTranslations = {
       pendingTicketNotice:
         'Le billet officiel et le QR code seront disponibles une fois le paiement confirmé.',
       showQr: "Présentez ce QR code à l'arrivée.",
+      printTicket: 'Imprimer / enregistrer en PDF',
+      downloadTicket: 'Télécharger le billet',
+      posterChip: 'Affiche evenement',
+      posterTitle: "Apercu de l'affiche",
+      posterCopy:
+        "Utilisez cette affiche comme support visuel rapide pour votre communication et le desk d'accueil.",
+      posterFallback: "Ouvrir l'affiche du summit",
+      posterOpen: "Ouvrir l'affiche",
       participants: 'Participants',
       addons: 'Options',
       newRegistration: 'Nouvelle inscription',
