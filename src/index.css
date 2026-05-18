@@ -759,6 +759,10 @@ textarea {
   gap: 1.25rem;
 }
 
+.ticket-success-main--full {
+  grid-column: 1 / -1;
+}
+
 .ticket-summary-grid {
   display: grid;
   gap: 0;
