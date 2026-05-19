@@ -2,7 +2,7 @@ const QRCode = require('qrcode')
 
 const ticketCopy = {
   en: {
-    summitName: 'EA European Athletics Coaching Summit 2026',
+    summitName: 'EA Coaching Summit 2026',
     confirmationSubject: 'Your registration is confirmed',
     greeting: 'Your payment has been confirmed.',
     body:
@@ -21,7 +21,7 @@ const ticketCopy = {
     viewOnline: 'You can also view your confirmation online',
   },
   fr: {
-    summitName: 'EA European Athletics Coaching Summit 2026',
+    summitName: 'EA Coaching Summit 2026',
     confirmationSubject: 'Votre inscription est confirmee',
     greeting: 'Votre paiement a bien ete confirme.',
     body:

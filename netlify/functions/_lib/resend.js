@@ -18,6 +18,7 @@ const sendConfirmationEmail = async ({ registration, baseUrl }) => {
   const payload = {
     from: process.env.RESEND_FROM_EMAIL,
     to: [email.to],
+    cc: ['coaching-summit@fla.lu'],
     subject: email.subject,
     html: email.html,
     text: email.text,
