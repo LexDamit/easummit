@@ -142,7 +142,7 @@ const buildTicketSvg = ({
 </svg>`
 }
 
-const buildEmailHtml = ({ registration, baseUrl, language, qrDataUrl }) => {
+const buildEmailHtml = ({ registration, baseUrl, language }) => {
   const copy = ticketCopy[language]
   const leadParticipant = getLeadParticipant(registration)
   const participants = buildParticipantsMarkup(registration)
@@ -174,9 +174,8 @@ const buildEmailHtml = ({ registration, baseUrl, language, qrDataUrl }) => {
                 </td>
               </tr>
             </table>
-            <div style="text-align:center;margin:0 0 24px;">
-              <img src="${qrDataUrl}" alt="QR code" style="width:180px;height:180px;border-radius:18px;border:1px solid #d6e1f5;background:#fff;padding:12px;" />
-              <p style="margin:12px 0 0;font-size:15px;color:#4f6787;">${escapeHtml(copy.checkIn)}</p>
+            <div style="margin:0 0 24px;padding:18px 20px;border:1px dashed #cfdced;border-radius:18px;background:#ffffff;">
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#4f6787;">${escapeHtml(copy.checkIn)}</p>
             </div>
             ${participants ? `<div style="margin:0 0 16px;"><strong>${escapeHtml(copy.participants)}:</strong><ul style="margin:8px 0 0;padding-left:18px;color:#4f6787;">${participants}</ul></div>` : ''}
             ${addons ? `<div style="margin:0 0 24px;"><strong>${escapeHtml(copy.addons)}:</strong><ul style="margin:8px 0 0;padding-left:18px;color:#4f6787;">${addons}</ul></div>` : ''}
@@ -227,7 +226,7 @@ const buildConfirmationEmail = async ({ registration, baseUrl }) => {
     language,
     to: leadParticipant.email || '',
     subject: `${copy.summitName} - ${copy.confirmationSubject}`,
-    html: buildEmailHtml({ registration, baseUrl, language, qrDataUrl }),
+    html: buildEmailHtml({ registration, baseUrl, language }),
     text: buildEmailText({ registration, baseUrl, language }),
     attachments: [
       {
