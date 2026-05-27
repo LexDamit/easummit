@@ -940,10 +940,30 @@ textarea {
   font-weight: 700;
 }
 
+.admin-table__participant-cell strong,
+.admin-table__stack-cell strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
 .admin-table__muted-cell,
 .admin-table__date-cell {
   color: var(--muted);
   line-height: 1.45;
+}
+
+.admin-table__stack-cell {
+  min-width: 0;
+  color: var(--muted);
+}
+
+.admin-table__stack-cell span {
+  display: block;
+  line-height: 1.45;
+}
+
+.admin-table__stack-cell--wide {
+  min-width: 220px;
 }
 
 .admin-table__amount-cell {

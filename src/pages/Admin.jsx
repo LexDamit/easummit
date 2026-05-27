@@ -23,6 +23,30 @@ const isPaidStatus = (value) => {
 
 const parseAmount = (value) => Number(value || 0)
 
+const getPaymentTone = (value) => {
+  const status = String(value || '').toLowerCase()
+
+  if (
+    status.includes('paid') ||
+    status.includes('success') ||
+    status.includes('complete') ||
+    status.includes('confirmed') ||
+    status.includes('settled')
+  ) {
+    return 'paid'
+  }
+
+  if (status.includes('cancel') || status.includes('expired')) {
+    return 'cancelled'
+  }
+
+  if (status.includes('fail') || status.includes('declin') || status.includes('error')) {
+    return 'failed'
+  }
+
+  return 'pending'
+}
+
 const formatTimestamp = (value, language) => {
   if (!value) {
     return '—'
@@ -53,6 +77,20 @@ const getPrimaryParticipant = (registration) =>
 
 const registrationNeedsHotel = (registration) =>
   (registration.addons || []).some((item) => item.id?.startsWith('hotel-'))
+
+const formatAddonSummary = (addons = []) => {
+  if (!addons.length) {
+    return ''
+  }
+
+  return addons
+    .map((item) =>
+      [item.name, item.price ? `EUR ${parseAmount(item.price).toFixed(2)}` : '']
+        .filter(Boolean)
+        .join(' - '),
+    )
+    .join(' • ')
+}
 
 const buildPaymentProofMarkup = (registrations, language, ui) => {
   const title = ui.paymentProofTitle
@@ -225,6 +263,9 @@ function Admin({
           singleLabel: 'Single',
           doubleLabel: 'Double',
           amountTaken: 'Amount taken',
+          profileColumn: 'Profil',
+          registrationColumn: 'Reservation',
+          noAddonsSelected: 'Aucune option selectionnee',
         }
       : {
           tabs: {
@@ -300,6 +341,9 @@ function Admin({
           singleLabel: 'Single',
           doubleLabel: 'Double',
           amountTaken: 'Amount taken',
+          profileColumn: 'Profile',
+          registrationColumn: 'Registration',
+          noAddonsSelected: 'No add-ons selected',
         }
 
   const [email, setEmail] = useState('')
@@ -315,12 +359,8 @@ function Admin({
   const [filters, setFilters] = useState({
     name: '',
     email: '',
-    country: '',
-    federation: '',
-    role: '',
-    gender: '',
-    page: '',
-    packageName: '',
+    profile: '',
+    registration: '',
     paymentStatus: '',
     bookingReference: '',
   })
@@ -357,6 +397,7 @@ function Admin({
             language,
           ),
           totalAmountNumber: parseAmount(registration.totalAmount),
+          addonSummary: formatAddonSummary(registration.addons),
         }
       }),
     [language, registrations],
@@ -385,6 +426,22 @@ function Admin({
           genderLabel: participant.gender || '',
           variantName: registration.variantName,
           packageName: registration.packageName,
+          addonSummary: registration.addonSummary,
+          profileSummary: [
+            getCountryLabel(participant.country, language),
+            getFederationLabel(participant.memberFederation, language),
+            getRoleLabel(participant.role, language),
+            participant.gender || '',
+          ]
+            .filter(Boolean)
+            .join(' • '),
+          registrationSummary: [
+            registration.variantName,
+            registration.packageName,
+            registration.addonSummary,
+          ]
+            .filter(Boolean)
+            .join(' • '),
           paymentStatus: registration.paymentStatus,
           totalAmountNumber: registration.totalAmountNumber,
           registeredAtLabel: registration.registeredAtLabel,
@@ -406,12 +463,8 @@ function Admin({
           const haystackMap = {
             name: item.participantName,
             email: item.participantEmail,
-            country: item.countryLabel,
-            federation: item.federationLabel,
-            role: item.roleLabel,
-            gender: item.genderLabel,
-            page: item.variantName,
-            packageName: item.packageName,
+            profile: item.profileSummary,
+            registration: item.registrationSummary,
             paymentStatus: item.paymentStatus,
             bookingReference: item.bookingReference,
           }
@@ -860,12 +913,8 @@ function Admin({
                     setFilters({
                       name: '',
                       email: '',
-                      country: '',
-                      federation: '',
-                      role: '',
-                      gender: '',
-                      page: '',
-                      packageName: '',
+                      profile: '',
+                      registration: '',
                       paymentStatus: '',
                       bookingReference: '',
                     })
@@ -881,12 +930,8 @@ function Admin({
                     <tr>
                       <th>{ui.participantName}</th>
                       <th>{ui.participantEmail}</th>
-                      <th>{ui.country}</th>
-                      <th>{ui.federation}</th>
-                      <th>{ui.role}</th>
-                      <th>Gender</th>
-                      <th>{ui.page}</th>
-                      <th>{ui.packageLabel}</th>
+                      <th>{ui.profileColumn}</th>
+                      <th>{ui.registrationColumn}</th>
                       <th>{ui.referenceLabel}</th>
                       <th>{ui.paymentStatus}</th>
                       <th>{ui.paymentAmount}</th>
@@ -897,12 +942,8 @@ function Admin({
                       {[
                         'name',
                         'email',
-                        'country',
-                        'federation',
-                        'role',
-                        'gender',
-                        'page',
-                        'packageName',
+                        'profile',
+                        'registration',
                         'bookingReference',
                         'paymentStatus',
                       ].map((key) => (
@@ -930,19 +971,41 @@ function Admin({
                         className={selectedRegistrationRow?.key === item.key ? 'is-active' : ''}
                         onClick={() => setSelectedRegistrationKey(item.key)}
                       >
-                        <td>{item.participantName || '—'}</td>
-                        <td>{item.participantEmail || '—'}</td>
-                        <td>{item.countryLabel || '—'}</td>
-                        <td>{item.federationLabel || '—'}</td>
-                        <td>{item.roleLabel || '—'}</td>
-                        <td>{item.genderLabel || '—'}</td>
-                        <td>{item.variantName || '—'}</td>
-                        <td>{item.packageName || '—'}</td>
-                        <td>{item.bookingReference || item.id}</td>
-                        <td>{item.paymentStatus || ui.pendingLabel}</td>
-                        <td>EUR {item.totalAmountNumber.toFixed(2)}</td>
-                        <td>{item.registeredAtLabel}</td>
-                        <td>{item.paidAtLabel}</td>
+                        <td className="admin-table__participant-cell">
+                          <strong>{item.participantName || '—'}</strong>
+                        </td>
+                        <td className="admin-table__muted-cell">
+                          {item.participantEmail || '—'}
+                        </td>
+                        <td className="admin-table__stack-cell">
+                          <strong>{item.countryLabel || '-'}</strong>
+                          <span>{item.federationLabel || '-'}</span>
+                          <span>
+                            {[item.roleLabel, item.genderLabel].filter(Boolean).join(' / ') || '-'}
+                          </span>
+                        </td>
+                        <td className="admin-table__stack-cell admin-table__stack-cell--wide">
+                          <strong>{item.packageName || '-'}</strong>
+                          <span>{item.variantName || '-'}</span>
+                          <span>{item.addonSummary || ui.noAddonsSelected}</span>
+                        </td>
+                        <td className="admin-table__reference-cell">
+                          {item.bookingReference || item.id}
+                        </td>
+                        <td>
+                          <span
+                            className={`status-pill status-pill--${getPaymentTone(
+                              item.paymentStatus,
+                            )}`}
+                          >
+                            {item.paymentStatus || ui.pendingLabel}
+                          </span>
+                        </td>
+                        <td className="admin-table__amount-cell">
+                          EUR {item.totalAmountNumber.toFixed(2)}
+                        </td>
+                        <td className="admin-table__date-cell">{item.registeredAtLabel}</td>
+                        <td className="admin-table__date-cell">{item.paidAtLabel}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -951,12 +1014,45 @@ function Admin({
 
               {selectedRegistration ? (
                 <div className="registration-detail registration-detail--admin">
-                  <h3>{selectedRegistrationRow?.participantName || '—'}</h3>
-                  <div className="admin-kpi-grid">
-                    <p>{selectedRegistrationRow?.participantEmail || '—'}</p>
-                    <p>{ui.referenceLabel}: {selectedRegistration.bookingReference}</p>
-                    <p>{ui.paymentStatus}: {selectedRegistration.paymentStatus || ui.pendingLabel}</p>
-                    <p>EUR {selectedRegistration.totalAmountNumber.toFixed(2)}</p>
+                  <div className="registration-detail__header">
+                    <div>
+                      <span className="order-summary-card__eyebrow">{ui.referenceLabel}</span>
+                      <h3>{selectedRegistrationRow?.participantName || '—'}</h3>
+                    </div>
+                    <span
+                      className={`status-pill status-pill--${getPaymentTone(
+                        selectedRegistration.paymentStatus,
+                      )}`}
+                    >
+                      {selectedRegistration.paymentStatus || ui.pendingLabel}
+                    </span>
+                  </div>
+                  <div className="admin-kpi-grid registration-detail__stats">
+                    <div className="admin-kpi-card">
+                      <span>{ui.participantEmail}</span>
+                      <strong>{selectedRegistrationRow?.participantEmail || '—'}</strong>
+                    </div>
+                    <div className="admin-kpi-card">
+                      <span>{ui.referenceLabel}</span>
+                      <strong>{selectedRegistration.bookingReference}</strong>
+                    </div>
+                    <div className="admin-kpi-card">
+                      <span>{ui.paymentStatus}</span>
+                      <strong>{selectedRegistration.paymentStatus || ui.pendingLabel}</strong>
+                    </div>
+                    <div className="admin-kpi-card">
+                      <span>{ui.paymentAmount}</span>
+                      <strong>EUR {selectedRegistration.totalAmountNumber.toFixed(2)}</strong>
+                    </div>
+                  </div>
+
+                  <div className="admin-subsection">
+                    <h3>{ui.packageLabel}</h3>
+                    <div className="admin-editor-card">
+                      <strong>{selectedRegistration.packageName || '-'}</strong>
+                      <p>{selectedRegistration.variantName || '-'}</p>
+                      <p>{selectedRegistration.addonSummary || ui.noAddonsSelected}</p>
+                    </div>
                   </div>
 
                   {selectedRegistration.participants?.length ? (
