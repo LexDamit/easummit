@@ -5,7 +5,10 @@ import RegistrationCheckout from './pages/RegistrationCheckout'
 import Success from './pages/Success'
 import Cancel from './pages/Cancel'
 import Admin from './pages/Admin'
-import { defaultRegistrationCatalog } from './data/registrationCatalog'
+import {
+  defaultRegistrationCatalog,
+  normalizeRegistrationCatalog,
+} from './data/registrationCatalog'
 import { defaultHotelSettings } from './data/hotelSettings'
 import { getUiTranslations, localizeCatalog } from './data/translations'
 import {
@@ -51,7 +54,9 @@ function App() {
   const [language, setLanguage] = useState(
     () => window.localStorage.getItem(LANGUAGE_KEY) || 'en',
   )
-  const [catalog, setCatalog] = useState(defaultRegistrationCatalog)
+  const [catalog, setCatalog] = useState(() =>
+    normalizeRegistrationCatalog(defaultRegistrationCatalog),
+  )
   const [adminUser, setAdminUser] = useState(null)
   const [registrations, setRegistrations] = useState([])
   const [hotelSettings, setHotelSettings] = useState(defaultHotelSettings)
@@ -106,7 +111,7 @@ function App() {
         ])
 
         if (!cancelled && remoteCatalog?.variants?.length) {
-          setCatalog(remoteCatalog)
+          setCatalog(normalizeRegistrationCatalog(remoteCatalog))
         }
 
         if (!cancelled && remoteHotelSettings?.hotels) {
@@ -154,8 +159,9 @@ function App() {
   }
 
   const handleSaveCatalog = async (nextCatalog) => {
-    await saveRegistrationCatalog(nextCatalog)
-    setCatalog(nextCatalog)
+    const normalizedCatalog = normalizeRegistrationCatalog(nextCatalog)
+    await saveRegistrationCatalog(normalizedCatalog)
+    setCatalog(normalizedCatalog)
   }
 
   const handleSaveHotelSettings = async (nextHotelSettings) => {
@@ -195,7 +201,11 @@ function App() {
 
     return (
       <RegistrationCheckout
-        addonsByPackage={localizedCatalog.addonsByPackage ?? {}}
+        addonsByPackage={
+          localizedCatalog.addonsByVariant?.[selectedVariant.id] ??
+          localizedCatalog.addonsByPackage ??
+          {}
+        }
         language={language}
         variant={selectedVariant}
         t={t}

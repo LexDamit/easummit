@@ -61,6 +61,51 @@ const loadTrustedCatalog = async () => {
   return value
 }
 
+const ensureAddon = (addons = [], addon) => {
+  if (addons.some((item) => item.id === addon.id)) {
+    return addons
+  }
+
+  return [...addons, addon]
+}
+
+const normalizeTrustedCatalog = (catalog) => {
+  const variants = (catalog?.variants || []).map((variant) => {
+    if (variant.id !== 'local') {
+      return variant
+    }
+
+    return {
+      ...variant,
+      packageOptions: (variant.packageOptions || []).map((option) => ({
+        ...option,
+        price: 0,
+      })),
+    }
+  })
+
+  return {
+    ...catalog,
+    variants,
+    addonsByVariant: {
+      ...(catalog?.addonsByVariant || {}),
+      local: {
+        ...(catalog?.addonsByVariant?.local || {}),
+        single: ensureAddon(catalog?.addonsByVariant?.local?.single || [], {
+          id: 'lunches-coffee-breaks',
+          name: 'Lunches & Coffee Breaks',
+          price: 62,
+        }),
+        double: ensureAddon(catalog?.addonsByVariant?.local?.double || [], {
+          id: 'lunches-coffee-breaks',
+          name: 'Lunches & Coffee Breaks',
+          price: 124,
+        }),
+      },
+    },
+  }
+}
+
 const validateParticipants = (participants, participantCount) => {
   if (!Array.isArray(participants) || participants.length !== participantCount) {
     return false
@@ -119,7 +164,7 @@ exports.handler = async (event) => {
       language = 'en',
     } = JSON.parse(event.body || '{}')
 
-    const catalog = await loadTrustedCatalog()
+    const catalog = normalizeTrustedCatalog(await loadTrustedCatalog())
     const variant = catalog.variants.find((item) => item.id === variantId)
     const selectedPackage = variant?.packageOptions?.find(
       (item) => item.id === packageType,
@@ -146,7 +191,10 @@ exports.handler = async (event) => {
       }
     }
 
-    const availableAddons = catalog.addonsByPackage?.[packageType] ?? []
+    const availableAddons = [
+      ...(catalog.addonsByPackage?.[packageType] ?? []),
+      ...(catalog.addonsByVariant?.[variant.id]?.[packageType] ?? []),
+    ]
     const addons = availableAddons.filter((item) => addonIds.includes(item.id))
     const totalAmount =
       Number(selectedPackage.price) +

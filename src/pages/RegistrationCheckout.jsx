@@ -42,6 +42,12 @@ const getFunctionErrorMessage = (response, data, t) => {
 }
 
 const getAddonDescription = (packageType, addonId, t) => {
+  if (addonId === 'lunches-coffee-breaks') {
+    return packageType === 'double'
+      ? t.checkout.lunchCoffeeDouble
+      : t.checkout.lunchCoffeeSingle
+  }
+
   if (packageType === 'double') {
     if (addonId === 'networking-dinner') {
       return t.checkout.dinnerDouble

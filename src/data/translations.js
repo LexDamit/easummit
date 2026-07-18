@@ -57,6 +57,8 @@ const uiTranslations = {
       optionalAddon: 'Optional add-on',
       dinnerSingle: 'Includes 1 dinner place.',
       dinnerDouble: 'Includes 2 dinner places for both participants.',
+      lunchCoffeeSingle: 'Includes lunches and coffee breaks for 1 participant.',
+      lunchCoffeeDouble: 'Includes lunches and coffee breaks for 2 participants.',
       hotelSingle: 'Includes a single room for 1 participant.',
       hotelDouble: 'Includes a double room for both participants.',
       errors: {
@@ -82,7 +84,7 @@ const uiTranslations = {
       },
       includesByVariant: {
         local:
-          'All packages include full conference access, coffee breaks and lunch on Saturday.',
+          'All packages include full conference access. Lunches & Coffee Breaks can be added as an option.',
         partners:
           'All packages include full conference access, coffee breaks and lunch on Saturday.',
         international:
@@ -234,6 +236,8 @@ const uiTranslations = {
       optionalAddon: 'Option supplémentaire',
       dinnerSingle: 'Comprend 1 place pour le dîner.',
       dinnerDouble: 'Comprend 2 places pour le dîner pour les deux participants.',
+      lunchCoffeeSingle: 'Comprend les déjeuners et pauses café pour 1 participant.',
+      lunchCoffeeDouble: 'Comprend les déjeuners et pauses café pour 2 participants.',
       hotelSingle: 'Comprend une chambre simple pour 1 participant.',
       hotelDouble: 'Comprend une chambre double pour les deux participants.',
       errors: {
@@ -259,7 +263,7 @@ const uiTranslations = {
       },
       includesByVariant: {
         local:
-          'Tous les packages incluent l’accès complet à la conférence, les pauses café et le déjeuner du samedi.',
+          'Tous les packages incluent l’accès complet à la conférence. L’option déjeuners et pauses café peut être ajoutée.',
         partners:
           'Tous les packages incluent l’accès complet à la conférence, les pauses café et le déjeuner du samedi.',
         international:
@@ -361,7 +365,7 @@ const catalogTranslations = {
         pageLabel: 'Local',
         title: 'Local participants',
         description:
-          'The packages below are reserved for participants from Luxembourg who hold an FLA or INAPS licence. All packages include full conference access, coffee breaks and lunch on Saturday.',
+          'The packages below are reserved for participants from Luxembourg who hold an FLA or INAPS licence. Conference access is included and Lunches & Coffee Breaks can be added as an option.',
       },
       partners: {
         pageLabel: 'Partners',
@@ -390,7 +394,18 @@ const catalogTranslations = {
           'Includes full conference access, coffee breaks and lunch on Saturday for 2 participants.',
       },
     },
+    variantPackageOptions: {
+      local: {
+        single: {
+          baseDescription: 'Includes full conference access.',
+        },
+        double: {
+          baseDescription: 'Includes full conference access for 2 participants.',
+        },
+      },
+    },
     addons: {
+      'lunches-coffee-breaks': 'Lunches & Coffee Breaks',
       'networking-dinner': 'Networking dinner (Saturday evening)',
       'hotel-09-10': 'Hotel stay 1 night (09-10 October)',
       'hotel-10-11': 'Hotel stay 1 night (10-11 October)',
@@ -403,7 +418,7 @@ const catalogTranslations = {
         pageLabel: 'Local',
         title: 'Participants locaux',
         description:
-          'Les packages ci-dessous sont réservés aux participants du Luxembourg titulaires d’une licence FLA ou INAPS. Tous les packages incluent l’accès complet à la conférence, les pauses café et le déjeuner du samedi.',
+          'Les packages ci-dessous sont réservés aux participants du Luxembourg titulaires d’une licence FLA ou INAPS. L’accès à la conférence est inclus et l’option déjeuners et pauses café peut être ajoutée.',
       },
       partners: {
         pageLabel: 'Partenaires',
@@ -432,7 +447,18 @@ const catalogTranslations = {
           'Inclut l’accès complet à la conférence, les pauses café et le déjeuner du samedi pour 2 participants.',
       },
     },
+    variantPackageOptions: {
+      local: {
+        single: {
+          baseDescription: 'Inclut l’accès complet à la conférence.',
+        },
+        double: {
+          baseDescription: 'Inclut l’accès complet à la conférence pour 2 participants.',
+        },
+      },
+    },
     addons: {
+      'lunches-coffee-breaks': 'Déjeuners & pauses café',
       'networking-dinner': 'Dîner networking (samedi soir)',
       'hotel-09-10': 'Séjour hôtel 1 nuit (09-10 octobre)',
       'hotel-10-11': 'Séjour hôtel 1 nuit (10-11 octobre)',
@@ -455,6 +481,7 @@ export const localizeCatalog = (catalog, language) => {
       packageOptions: variant.packageOptions.map((option) => ({
         ...option,
         ...(copy.packageOptions[option.id] ?? {}),
+        ...(copy.variantPackageOptions?.[variant.id]?.[option.id] ?? {}),
       })),
     })),
     addonsByPackage: Object.fromEntries(
@@ -464,6 +491,20 @@ export const localizeCatalog = (catalog, language) => {
           ...addon,
           name: copy.addons[addon.id] ?? addon.name,
         })),
+      ]),
+    ),
+    addonsByVariant: Object.fromEntries(
+      Object.entries(catalog.addonsByVariant ?? {}).map(([variantId, addonMap]) => [
+        variantId,
+        Object.fromEntries(
+          Object.entries(addonMap || {}).map(([packageType, addons]) => [
+            packageType,
+            addons.map((addon) => ({
+              ...addon,
+              name: copy.addons[addon.id] ?? addon.name,
+            })),
+          ]),
+        ),
       ]),
     ),
   }
