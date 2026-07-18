@@ -41,7 +41,7 @@ const mergeAddonGroups = (baseAddons = {}, variantAddons = {}) =>
       new Set([...Object.keys(baseAddons || {}), ...Object.keys(variantAddons || {})]),
     ).map((packageType) => [
       packageType,
-      [...(baseAddons?.[packageType] || []), ...(variantAddons?.[packageType] || [])],
+      [...(variantAddons?.[packageType] || []), ...(baseAddons?.[packageType] || [])],
     ]),
   )
 
