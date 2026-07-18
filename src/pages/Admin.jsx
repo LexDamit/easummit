@@ -92,6 +92,27 @@ const formatAddonSummary = (addons = []) => {
     .join(' • ')
 }
 
+const formatAddonLine = (addon) =>
+  [addon?.name, addon?.price ? `EUR ${parseAmount(addon.price).toFixed(2)}` : '']
+    .filter(Boolean)
+    .join(' - ')
+
+const getRegistrationOptionItems = (registration, ui) => {
+  const optionItems = []
+
+  if (registration?.baseItem?.name) {
+    optionItems.push({
+      id: 'base-item',
+      name: registration.baseItem.name,
+      price: parseAmount(registration.baseItem.price),
+      isBase: true,
+      label: ui.baseIncludedLabel,
+    })
+  }
+
+  return [...optionItems, ...(registration?.addons || [])]
+}
+
 const buildPaymentProofMarkup = (registrations, language, ui) => {
   const title = ui.paymentProofTitle
   const generatedAt = formatTimestamp(new Date(), language)
@@ -266,6 +287,8 @@ function Admin({
           profileColumn: 'Profil',
           registrationColumn: 'Reservation',
           noAddonsSelected: 'Aucune option selectionnee',
+          selectedOptions: 'Options choisies',
+          baseIncludedLabel: 'Base',
         }
       : {
           tabs: {
@@ -344,6 +367,8 @@ function Admin({
           profileColumn: 'Profile',
           registrationColumn: 'Registration',
           noAddonsSelected: 'No add-ons selected',
+          selectedOptions: 'Selected options',
+          baseIncludedLabel: 'Base',
         }
 
   const [email, setEmail] = useState('')
@@ -427,6 +452,7 @@ function Admin({
           variantName: registration.variantName,
           packageName: registration.packageName,
           addonSummary: registration.addonSummary,
+          selectedOptions: getRegistrationOptionItems(registration, ui),
           profileSummary: [
             getCountryLabel(participant.country, language),
             getFederationLabel(participant.memberFederation, language),
@@ -987,7 +1013,24 @@ function Admin({
                         <td className="admin-table__stack-cell admin-table__stack-cell--wide">
                           <strong>{item.packageName || '-'}</strong>
                           <span>{item.variantName || '-'}</span>
-                          <span>{item.addonSummary || ui.noAddonsSelected}</span>
+                          <div className="admin-registration-options">
+                            {item.selectedOptions?.length ? (
+                              item.selectedOptions.map((option, index) => (
+                                <span
+                                  key={`${item.key}-option-${index}`}
+                                  className={`admin-registration-options__item${
+                                    option.isBase ? ' is-base' : ''
+                                  }`}
+                                >
+                                  {formatAddonLine(option)}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="admin-registration-options__empty">
+                                {ui.noAddonsSelected}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="admin-table__reference-cell">
                           {item.bookingReference || item.id}
@@ -1051,7 +1094,28 @@ function Admin({
                     <div className="admin-editor-card">
                       <strong>{selectedRegistration.packageName || '-'}</strong>
                       <p>{selectedRegistration.variantName || '-'}</p>
-                      <p>{selectedRegistration.addonSummary || ui.noAddonsSelected}</p>
+                      <div className="admin-selection-breakdown">
+                        {getRegistrationOptionItems(selectedRegistration, ui).length ? (
+                          getRegistrationOptionItems(selectedRegistration, ui).map((option, index) => (
+                            <div
+                              className={`admin-selection-breakdown__row${
+                                option.isBase ? ' is-base' : ''
+                              }`}
+                              key={`${selectedRegistration.id}-option-${index}`}
+                            >
+                              <div className="admin-selection-breakdown__copy">
+                                <strong>{option.name}</strong>
+                                <span>
+                                  {option.isBase ? ui.baseIncludedLabel : ui.selectedOptions}
+                                </span>
+                              </div>
+                              <strong>EUR {parseAmount(option.price).toFixed(2)}</strong>
+                            </div>
+                          ))
+                        ) : (
+                          <p>{ui.noAddonsSelected}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 

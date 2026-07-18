@@ -35,6 +35,16 @@ const PAGE_PATHS = {
   admin: '/admin',
 }
 
+const mergeAddonGroups = (baseAddons = {}, variantAddons = {}) =>
+  Object.fromEntries(
+    Array.from(
+      new Set([...Object.keys(baseAddons || {}), ...Object.keys(variantAddons || {})]),
+    ).map((packageType) => [
+      packageType,
+      [...(baseAddons?.[packageType] || []), ...(variantAddons?.[packageType] || [])],
+    ]),
+  )
+
 const getPageFromLocation = () => {
   const params = new URLSearchParams(window.location.search)
   const status = params.get('status')
@@ -201,11 +211,10 @@ function App() {
 
     return (
       <RegistrationCheckout
-        addonsByPackage={
-          localizedCatalog.addonsByVariant?.[selectedVariant.id] ??
-          localizedCatalog.addonsByPackage ??
-          {}
-        }
+        addonsByPackage={mergeAddonGroups(
+          localizedCatalog.addonsByPackage ?? {},
+          localizedCatalog.addonsByVariant?.[selectedVariant.id] ?? {},
+        )}
         language={language}
         variant={selectedVariant}
         t={t}
