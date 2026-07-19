@@ -289,6 +289,24 @@ function Admin({
           noAddonsSelected: 'Aucune option selectionnee',
           selectedOptions: 'Options choisies',
           baseIncludedLabel: 'Base',
+          attendanceColumn: 'Presence',
+          timelineColumn: 'Suivi',
+          totalAttendees: 'Participants',
+          readyToAttend: 'Prets a participer',
+          awaitingPayment: 'Paiement en attente',
+          hotelFollowUp: 'Hotel a suivre',
+          sharedBookings: 'Reservations a 2',
+          readyBadge: 'Confirme',
+          pendingBadge: 'En attente',
+          hotelBadge: 'Hotel',
+          oneParticipant: '1 participant',
+          multipleParticipants: '{count} participants',
+          paidOnLabel: 'Paye',
+          quickAll: 'Tous',
+          quickReady: 'Confirmes',
+          quickPending: 'En attente',
+          quickHotel: 'Hotel',
+          quickShared: 'A 2',
         }
       : {
           tabs: {
@@ -369,6 +387,24 @@ function Admin({
           noAddonsSelected: 'No add-ons selected',
           selectedOptions: 'Selected options',
           baseIncludedLabel: 'Base',
+          attendanceColumn: 'Attendance',
+          timelineColumn: 'Timeline',
+          totalAttendees: 'Participants',
+          readyToAttend: 'Ready to attend',
+          awaitingPayment: 'Awaiting payment',
+          hotelFollowUp: 'Hotel follow-up',
+          sharedBookings: '2-person bookings',
+          readyBadge: 'Confirmed',
+          pendingBadge: 'Pending',
+          hotelBadge: 'Hotel',
+          oneParticipant: '1 participant',
+          multipleParticipants: '{count} participants',
+          paidOnLabel: 'Paid',
+          quickAll: 'All',
+          quickReady: 'Confirmed',
+          quickPending: 'Pending',
+          quickHotel: 'Hotel',
+          quickShared: '2 people',
         }
 
   const [email, setEmail] = useState('')
@@ -381,6 +417,7 @@ function Admin({
   const [activeTab, setActiveTab] = useState('definitions')
   const [selectedRegistrationKey, setSelectedRegistrationKey] = useState('')
   const [selectedFinanceIds, setSelectedFinanceIds] = useState([])
+  const [registrationView, setRegistrationView] = useState('all')
   const [filters, setFilters] = useState({
     name: '',
     email: '',
@@ -453,6 +490,14 @@ function Admin({
           packageName: registration.packageName,
           addonSummary: registration.addonSummary,
           selectedOptions: getRegistrationOptionItems(registration, ui),
+          participantCount: participants.length,
+          otherParticipants: participants
+            .filter((_, participantIndex) => participantIndex !== index)
+            .map((item) => [item.firstName, item.lastName].filter(Boolean).join(' ').trim())
+            .filter(Boolean),
+          isReady: registration.paymentConfirmed ? true : isPaidStatus(registration.paymentStatus),
+          needsHotel: registrationNeedsHotel(registration),
+          paymentTone: getPaymentTone(registration.paymentStatus),
           profileSummary: [
             getCountryLabel(participant.country, language),
             getFederationLabel(participant.memberFederation, language),
@@ -479,28 +524,48 @@ function Admin({
 
   const filteredRegistrations = useMemo(
     () =>
-      participantRows.filter((item) =>
-        Object.entries(filters).every(([key, rawValue]) => {
-          const value = String(rawValue || '').trim().toLowerCase()
-          if (!value) {
-            return true
+      participantRows
+        .filter((item) => {
+          if (registrationView === 'ready') {
+            return item.isReady
           }
 
-          const haystackMap = {
-            name: item.participantName,
-            email: item.participantEmail,
-            profile: item.profileSummary,
-            registration: item.registrationSummary,
-            paymentStatus: item.paymentStatus,
-            bookingReference: item.bookingReference,
+          if (registrationView === 'pending') {
+            return !item.isReady
           }
 
-          return String(haystackMap[key] || '')
-            .toLowerCase()
-            .includes(value)
-        }),
-      ),
-    [filters, participantRows],
+          if (registrationView === 'hotel') {
+            return item.needsHotel
+          }
+
+          if (registrationView === 'shared') {
+            return item.participantCount > 1
+          }
+
+          return true
+        })
+        .filter((item) =>
+          Object.entries(filters).every(([key, rawValue]) => {
+            const value = String(rawValue || '').trim().toLowerCase()
+            if (!value) {
+              return true
+            }
+
+            const haystackMap = {
+              name: [item.participantName, item.participantEmail, ...item.otherParticipants].join(' '),
+              email: item.participantEmail,
+              profile: item.profileSummary,
+              registration: item.registrationSummary,
+              paymentStatus: item.paymentStatus,
+              bookingReference: item.bookingReference,
+            }
+
+            return String(haystackMap[key] || '')
+              .toLowerCase()
+              .includes(value)
+          }),
+        ),
+    [filters, participantRows, registrationView],
   )
 
   const selectedRegistrationRow = useMemo(
@@ -551,6 +616,17 @@ function Admin({
           (item.paymentConfirmed || isPaidStatus(item.paymentStatus)),
       ),
     [adminRegistrations],
+  )
+
+  const registrationMonitorStats = useMemo(
+    () => ({
+      totalParticipants: participantRows.length,
+      readyParticipants: participantRows.filter((item) => item.isReady).length,
+      pendingParticipants: participantRows.filter((item) => !item.isReady).length,
+      hotelParticipants: participantRows.filter((item) => item.needsHotel).length,
+      sharedParticipants: participantRows.filter((item) => item.participantCount > 1).length,
+    }),
+    [participantRows],
   )
 
   const hotelStats = useMemo(() => {
@@ -950,6 +1026,44 @@ function Admin({
                 </button>
               </div>
 
+              <div className="admin-kpi-grid admin-kpi-grid--cards">
+                <div className="admin-kpi-card">
+                  <span>{ui.totalAttendees}</span>
+                  <strong>{registrationMonitorStats.totalParticipants}</strong>
+                </div>
+                <div className="admin-kpi-card">
+                  <span>{ui.readyToAttend}</span>
+                  <strong>{registrationMonitorStats.readyParticipants}</strong>
+                </div>
+                <div className="admin-kpi-card">
+                  <span>{ui.awaitingPayment}</span>
+                  <strong>{registrationMonitorStats.pendingParticipants}</strong>
+                </div>
+                <div className="admin-kpi-card">
+                  <span>{ui.hotelFollowUp}</span>
+                  <strong>{registrationMonitorStats.hotelParticipants}</strong>
+                </div>
+              </div>
+
+              <div className="admin-quick-filters">
+                {[
+                  ['all', ui.quickAll],
+                  ['ready', ui.quickReady],
+                  ['pending', ui.quickPending],
+                  ['hotel', ui.quickHotel],
+                  ['shared', ui.quickShared],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`admin-quick-filter ${registrationView === value ? 'is-active' : ''}`}
+                    onClick={() => setRegistrationView(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
@@ -1000,7 +1114,7 @@ function Admin({
                         <td className="admin-table__participant-cell">
                           <strong>{item.participantName || '—'}</strong>
                         </td>
-                        <td className="admin-table__muted-cell">
+                        <td className="admin-table__stack-cell">
                           {item.participantEmail || '—'}
                         </td>
                         <td className="admin-table__stack-cell">
@@ -1009,6 +1123,7 @@ function Admin({
                           <span>
                             {[item.roleLabel, item.genderLabel].filter(Boolean).join(' / ') || '-'}
                           </span>
+                          <span>{item.participantEmail || '-'}</span>
                         </td>
                         <td className="admin-table__stack-cell admin-table__stack-cell--wide">
                           <strong>{item.packageName || '-'}</strong>
@@ -1126,7 +1241,15 @@ function Admin({
                         <div className="admin-editor-card" key={`${selectedRegistration.id}-${index}`}>
                           <strong>{t.admin.participantIndexed.replace('{index}', index + 1)}</strong>
                           <p>{participant.firstName} {participant.lastName}</p>
-                          <p>{participant.email}</p>
+                          <p>
+                            {participant.email ? (
+                              <a className="text-link" href={`mailto:${participant.email}`}>
+                                {participant.email}
+                              </a>
+                            ) : (
+                              'â€”'
+                            )}
+                          </p>
                           <p>{getCountryLabel(participant.country, language)}</p>
                           <p>{getFederationLabel(participant.memberFederation, language)}</p>
                           <p>{getRoleLabel(participant.role, language)}</p>
