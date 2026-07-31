@@ -36,10 +36,29 @@ const isPaidStatus = (value) => {
   )
 }
 
+const isInvitedStatus = (value) => {
+  const status = String(value || '').toLowerCase()
+  return (
+    status.includes('invite') ||
+    status.includes('guest') ||
+    status.includes('complimentary')
+  )
+}
+
+const isAttendanceConfirmed = (registration) =>
+  registration?.orderStatus === 'confirmed' ||
+  Boolean(registration?.paymentConfirmed) ||
+  isPaidStatus(registration?.paymentStatus) ||
+  isInvitedStatus(registration?.paymentStatus)
+
 const parseAmount = (value) => Number(value || 0)
 
 const getPaymentTone = (value) => {
   const status = String(value || '').toLowerCase()
+
+  if (isInvitedStatus(status)) {
+    return 'invited'
+  }
 
   if (
     status.includes('paid') ||
@@ -340,8 +359,10 @@ function Admin({
           selectPackage: 'Choisir un package',
           manualPaid: 'Paye',
           manualPending: 'En attente',
+          manualInvited: 'Invite',
           markAsPaid: 'Marquer comme paye',
           markAsPending: 'Remettre en attente',
+          markAsInvited: 'Marquer comme invite',
         }
       : {
           tabs: {
@@ -457,8 +478,10 @@ function Admin({
           selectPackage: 'Select a package',
           manualPaid: 'Paid',
           manualPending: 'Pending',
+          manualInvited: 'Invited',
           markAsPaid: 'Mark as paid',
           markAsPending: 'Mark as pending',
+          markAsInvited: 'Mark as invited',
         }
 
   const [email, setEmail] = useState('')
@@ -605,7 +628,7 @@ function Admin({
             .filter((_, participantIndex) => participantIndex !== index)
             .map((item) => [item.firstName, item.lastName].filter(Boolean).join(' ').trim())
             .filter(Boolean),
-          isReady: registration.paymentConfirmed ? true : isPaidStatus(registration.paymentStatus),
+          isReady: isAttendanceConfirmed(registration),
           needsHotel: registrationNeedsHotel(registration),
           paymentTone: getPaymentTone(registration.paymentStatus),
           profileSummary: [
@@ -691,7 +714,7 @@ function Admin({
   const paidRegistrations = useMemo(
     () =>
       adminRegistrations.filter((item) =>
-        item.paymentConfirmed ? true : isPaidStatus(item.paymentStatus),
+        isAttendanceConfirmed(item),
       ),
     [adminRegistrations],
   )
@@ -723,7 +746,7 @@ function Admin({
       adminRegistrations.filter(
         (item) =>
           registrationNeedsHotel(item) &&
-          (item.paymentConfirmed || isPaidStatus(item.paymentStatus)),
+          isAttendanceConfirmed(item),
       ),
     [adminRegistrations],
   )
@@ -878,7 +901,7 @@ function Admin({
       variantId: variantOptions[0]?.id || 'local',
       packageType: variantOptions[0]?.packageOptions?.[0]?.id || 'single',
       addonIds: [],
-      paymentStatus: 'paid',
+    paymentStatus: 'paid',
       adminNotes: '',
       participants: [{ ...initialParticipant }, { ...initialParticipant }],
     })
@@ -924,6 +947,7 @@ function Admin({
       const totalAmount =
         parseAmount(manualPackage.price) +
         selectedAddons.reduce((sum, addon) => sum + parseAmount(addon.price), 0)
+      const isInvited = manualRegistration.paymentStatus === 'invited'
       const paymentConfirmed = isPaidStatus(manualRegistration.paymentStatus)
 
       await onCreateManualRegistration({
@@ -944,8 +968,8 @@ function Admin({
         primaryParticipant: participants[0],
         paymentStatus: manualRegistration.paymentStatus,
         paymentConfirmed,
-        orderStatus: paymentConfirmed ? 'confirmed' : 'pending_payment',
-        paymentStage: 'manual_entry',
+        orderStatus: paymentConfirmed || isInvited ? 'confirmed' : 'pending_payment',
+        paymentStage: isInvited ? 'manual_invited_entry' : 'manual_entry',
         paidAt: paymentConfirmed ? new Date().toISOString() : null,
         hotelRoom: '',
         adminNotes: manualRegistration.adminNotes,
@@ -997,12 +1021,17 @@ function Admin({
 
   const handlePaymentStateUpdate = async (registrationId, nextState) => {
     const isPaid = nextState === 'paid'
+    const isInvited = nextState === 'invited'
 
     await onUpdateRegistration(registrationId, {
       paymentStatus: nextState,
       paymentConfirmed: isPaid,
-      orderStatus: isPaid ? 'confirmed' : 'pending_payment',
-      paymentStage: isPaid ? 'manual_marked_paid' : 'manual_marked_pending',
+      orderStatus: isPaid || isInvited ? 'confirmed' : 'pending_payment',
+      paymentStage: isPaid
+        ? 'manual_marked_paid'
+        : isInvited
+          ? 'manual_marked_invited'
+          : 'manual_marked_pending',
       paidAt: isPaid ? new Date().toISOString() : null,
     })
   }
@@ -1339,6 +1368,7 @@ function Admin({
                       >
                         <option value="paid">{ui.manualPaid}</option>
                         <option value="pending">{ui.manualPending}</option>
+                        <option value="invited">{ui.manualInvited}</option>
                       </select>
                     </label>
                     <label className="field field--full">
@@ -1683,6 +1713,13 @@ function Admin({
                       onClick={() => handlePaymentStateUpdate(selectedRegistration.id, 'paid')}
                     >
                       {ui.markAsPaid}
+                    </button>
+                    <button
+                      className="button button--ghost"
+                      type="button"
+                      onClick={() => handlePaymentStateUpdate(selectedRegistration.id, 'invited')}
+                    >
+                      {ui.markAsInvited}
                     </button>
                     <button
                       className="button button--ghost"

@@ -1076,6 +1076,12 @@ textarea {
   border-color: rgba(201, 128, 22, 0.18);
 }
 
+.status-pill--invited {
+  background: rgba(17, 82, 165, 0.1);
+  color: #0f4ea8;
+  border-color: rgba(17, 82, 165, 0.16);
+}
+
 .status-pill--failed,
 .status-pill--cancelled {
   background: rgba(194, 55, 55, 0.1);
