@@ -184,3 +184,26 @@ export async function updateRegistrationAdmin(registrationId, payload) {
     updatedAt: serverTimestamp(),
   })
 }
+
+export async function createManualRegistration(registration) {
+  if (!db) {
+    throw new Error(firebaseInitError || 'Firebase firestore is not configured.')
+  }
+
+  const bookingReference = `FLA-MAN-${Date.now()}`
+  const paymentStatus = registration.paymentStatus || 'pending'
+  const paymentConfirmed = registration.paymentConfirmed ?? false
+
+  await setDoc(doc(db, 'registrations', bookingReference), {
+    bookingReference,
+    ...registration,
+    paymentStatus,
+    paymentConfirmed,
+    createdManually: true,
+    manualSource: 'admin',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+
+  return bookingReference
+}

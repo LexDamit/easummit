@@ -1,11 +1,26 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  getCountryOptions,
   getCountryLabel,
+  getFederationOptions,
   getFederationLabel,
+  getRoleOptions,
   getRoleLabel,
 } from '../data/participantOptions'
 
 const ADMIN_TABS = ['definitions', 'registrations', 'finance', 'hotels']
+
+const initialParticipant = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  country: '',
+  memberFederation: '',
+  role: '',
+  gender: '',
+}
+
+const validateEmail = (value) => /\S+@\S+\.\S+/.test(value)
 
 const isPaidStatus = (value) => {
   if (typeof value === 'object' && value !== null) {
@@ -200,6 +215,7 @@ function Admin({
   firebaseEnabled,
   hotelSettings,
   language,
+  onCreateManualRegistration,
   onLogin,
   onLogout,
   onSaveCatalog,
@@ -307,6 +323,25 @@ function Admin({
           quickPending: 'En attente',
           quickHotel: 'Hotel',
           quickShared: 'A 2',
+          addManualRegistration: 'Ajouter une inscription manuelle',
+          hideManualRegistration: 'Masquer le formulaire',
+          manualRegistrationTitle: 'Inscription manuelle',
+          manualRegistrationCopy:
+            "Ajoutez ici les participants inscrits par un autre canal pour qu'ils apparaissent dans le meme suivi.",
+          createManualRegistration: "Creer l'inscription",
+          manualRegistrationSaved: 'Inscription manuelle ajoutee.',
+          manualRegistrationFailed: "Impossible d'ajouter l'inscription.",
+          manualSourceLabel: 'Source externe / note',
+          categoryLabel: 'Categorie',
+          packageTypeLabel: 'Type de package',
+          addonSelectionLabel: 'Options choisies',
+          participantDetailsLabel: 'Informations participants',
+          paymentStateLabel: 'Statut de paiement',
+          selectPackage: 'Choisir un package',
+          manualPaid: 'Paye',
+          manualPending: 'En attente',
+          markAsPaid: 'Marquer comme paye',
+          markAsPending: 'Remettre en attente',
         }
       : {
           tabs: {
@@ -405,6 +440,25 @@ function Admin({
           quickPending: 'Pending',
           quickHotel: 'Hotel',
           quickShared: '2 people',
+          addManualRegistration: 'Add manual registration',
+          hideManualRegistration: 'Hide form',
+          manualRegistrationTitle: 'Manual registration',
+          manualRegistrationCopy:
+            'Add here participants who registered through another channel so they appear in the same live tracking.',
+          createManualRegistration: 'Create registration',
+          manualRegistrationSaved: 'Manual registration added.',
+          manualRegistrationFailed: 'Unable to add manual registration.',
+          manualSourceLabel: 'External source / note',
+          categoryLabel: 'Category',
+          packageTypeLabel: 'Package type',
+          addonSelectionLabel: 'Selected add-ons',
+          participantDetailsLabel: 'Participant details',
+          paymentStateLabel: 'Payment status',
+          selectPackage: 'Select a package',
+          manualPaid: 'Paid',
+          manualPending: 'Pending',
+          markAsPaid: 'Mark as paid',
+          markAsPending: 'Mark as pending',
         }
 
   const [email, setEmail] = useState('')
@@ -418,6 +472,18 @@ function Admin({
   const [selectedRegistrationKey, setSelectedRegistrationKey] = useState('')
   const [selectedFinanceIds, setSelectedFinanceIds] = useState([])
   const [registrationView, setRegistrationView] = useState('all')
+  const [showManualForm, setShowManualForm] = useState(false)
+  const [manualSaveMessage, setManualSaveMessage] = useState('')
+  const [manualErrors, setManualErrors] = useState({})
+  const [isManualSaving, setIsManualSaving] = useState(false)
+  const [manualRegistration, setManualRegistration] = useState({
+    variantId: catalog?.variants?.[0]?.id || 'local',
+    packageType: catalog?.variants?.[0]?.packageOptions?.[0]?.id || 'single',
+    addonIds: [],
+    paymentStatus: 'paid',
+    adminNotes: '',
+    participants: [{ ...initialParticipant }, { ...initialParticipant }],
+  })
   const [filters, setFilters] = useState({
     name: '',
     email: '',
@@ -434,6 +500,31 @@ function Admin({
   useEffect(() => {
     setHotelDraft(hotelSettings)
   }, [hotelSettings])
+
+  useEffect(() => {
+    const firstVariant = catalog?.variants?.[0]
+    if (!firstVariant) {
+      return
+    }
+
+    setManualRegistration((current) => {
+      const nextVariantId =
+        catalog.variants.some((variant) => variant.id === current.variantId)
+          ? current.variantId
+          : firstVariant.id
+      const variant = catalog.variants.find((item) => item.id === nextVariantId) || firstVariant
+      const nextPackageType =
+        variant.packageOptions?.some((option) => option.id === current.packageType)
+          ? current.packageType
+          : variant.packageOptions?.[0]?.id || 'single'
+
+      return {
+        ...current,
+        variantId: nextVariantId,
+        packageType: nextPackageType,
+      }
+    })
+  }, [catalog])
 
   useEffect(() => {
     if (!selectedRegistrationKey && registrations[0]?.id) {
@@ -464,6 +555,25 @@ function Admin({
       }),
     [language, registrations],
   )
+
+  const variantOptions = useMemo(() => catalog?.variants || [], [catalog])
+  const manualVariant =
+    variantOptions.find((item) => item.id === manualRegistration.variantId) || variantOptions[0]
+  const manualPackageOptions = manualVariant?.packageOptions || []
+  const manualPackage =
+    manualPackageOptions.find((item) => item.id === manualRegistration.packageType) ||
+    manualPackageOptions[0]
+  const manualParticipantCount = manualPackage?.participantCount || 1
+  const countryOptions = useMemo(() => getCountryOptions(language), [language])
+  const federationOptions = useMemo(() => getFederationOptions(language), [language])
+  const roleOptions = useMemo(() => getRoleOptions(language), [language])
+  const manualAddonOptions = useMemo(() => {
+    const baseAddons = catalog?.addonsByPackage?.[manualRegistration.packageType] || []
+    const variantAddons =
+      catalog?.addonsByVariant?.[manualRegistration.variantId]?.[manualRegistration.packageType] || []
+
+    return [...variantAddons, ...baseAddons]
+  }, [catalog, manualRegistration.packageType, manualRegistration.variantId])
 
   const participantRows = useMemo(
     () =>
@@ -717,6 +827,140 @@ function Admin({
     }))
   }
 
+  const handleManualRegistrationChange = (key, value) => {
+    setManualRegistration((current) => {
+      if (key === 'variantId') {
+        const nextVariant = variantOptions.find((item) => item.id === value) || variantOptions[0]
+        return {
+          ...current,
+          variantId: value,
+          packageType: nextVariant?.packageOptions?.[0]?.id || 'single',
+          addonIds: [],
+        }
+      }
+
+      if (key === 'packageType') {
+        return {
+          ...current,
+          packageType: value,
+          addonIds: [],
+        }
+      }
+
+      return {
+        ...current,
+        [key]: value,
+      }
+    })
+  }
+
+  const handleManualParticipantChange = (index, key, value) => {
+    setManualRegistration((current) => ({
+      ...current,
+      participants: current.participants.map((participant, participantIndex) =>
+        participantIndex === index ? { ...participant, [key]: value } : participant,
+      ),
+    }))
+    setManualErrors((current) => ({ ...current, [`${key}-${index}`]: '' }))
+  }
+
+  const toggleManualAddon = (addonId) => {
+    setManualRegistration((current) => ({
+      ...current,
+      addonIds: current.addonIds.includes(addonId)
+        ? current.addonIds.filter((item) => item !== addonId)
+        : [...current.addonIds, addonId],
+    }))
+  }
+
+  const resetManualRegistration = () => {
+    setManualRegistration({
+      variantId: variantOptions[0]?.id || 'local',
+      packageType: variantOptions[0]?.packageOptions?.[0]?.id || 'single',
+      addonIds: [],
+      paymentStatus: 'paid',
+      adminNotes: '',
+      participants: [{ ...initialParticipant }, { ...initialParticipant }],
+    })
+    setManualErrors({})
+  }
+
+  const validateManualRegistration = () => {
+    const nextErrors = {}
+
+    manualRegistration.participants
+      .slice(0, manualParticipantCount)
+      .forEach((participant, index) => {
+        if (!participant.firstName.trim()) nextErrors[`firstName-${index}`] = t.checkout.errors.firstNameRequired
+        if (!participant.lastName.trim()) nextErrors[`lastName-${index}`] = t.checkout.errors.lastNameRequired
+        if (!participant.email.trim()) {
+          nextErrors[`email-${index}`] = t.checkout.errors.emailRequired
+        } else if (!validateEmail(participant.email)) {
+          nextErrors[`email-${index}`] = t.checkout.errors.emailInvalid
+        }
+        if (!participant.country.trim()) nextErrors[`country-${index}`] = t.checkout.errors.countryRequired
+        if (!participant.memberFederation.trim()) nextErrors[`memberFederation-${index}`] = t.checkout.errors.federationRequired
+        if (!participant.role.trim()) nextErrors[`role-${index}`] = t.checkout.errors.roleRequired
+        if (!participant.gender.trim()) nextErrors[`gender-${index}`] = t.checkout.errors.genderRequired
+      })
+
+    setManualErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  const handleCreateManualRegistration = async () => {
+    if (!manualVariant || !manualPackage || !validateManualRegistration()) {
+      return
+    }
+
+    setIsManualSaving(true)
+    setManualSaveMessage('')
+
+    try {
+      const selectedAddons = manualAddonOptions.filter((addon) =>
+        manualRegistration.addonIds.includes(addon.id),
+      )
+      const participants = manualRegistration.participants.slice(0, manualParticipantCount)
+      const totalAmount =
+        parseAmount(manualPackage.price) +
+        selectedAddons.reduce((sum, addon) => sum + parseAmount(addon.price), 0)
+      const paymentConfirmed = isPaidStatus(manualRegistration.paymentStatus)
+
+      await onCreateManualRegistration({
+        variantId: manualVariant.id,
+        variantName: manualVariant.title,
+        packageType: manualPackage.id,
+        packageName: manualPackage.name,
+        participantCount: manualParticipantCount,
+        baseItem: {
+          name: manualPackage.baseItemName,
+          price: parseAmount(manualPackage.price),
+        },
+        addons: selectedAddons,
+        totalAmount,
+        currency: 'EUR',
+        language,
+        participants,
+        primaryParticipant: participants[0],
+        paymentStatus: manualRegistration.paymentStatus,
+        paymentConfirmed,
+        orderStatus: paymentConfirmed ? 'confirmed' : 'pending_payment',
+        paymentStage: 'manual_entry',
+        paidAt: paymentConfirmed ? new Date().toISOString() : null,
+        hotelRoom: '',
+        adminNotes: manualRegistration.adminNotes,
+      })
+
+      setManualSaveMessage(ui.manualRegistrationSaved)
+      resetManualRegistration()
+      setShowManualForm(false)
+    } catch (error) {
+      setManualSaveMessage(error.message || ui.manualRegistrationFailed)
+    } finally {
+      setIsManualSaving(false)
+    }
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
     setLoginError('')
@@ -749,6 +993,18 @@ function Admin({
 
   const handleRegistrationChange = async (registrationId, field, value) => {
     await onUpdateRegistration(registrationId, { [field]: value })
+  }
+
+  const handlePaymentStateUpdate = async (registrationId, nextState) => {
+    const isPaid = nextState === 'paid'
+
+    await onUpdateRegistration(registrationId, {
+      paymentStatus: nextState,
+      paymentConfirmed: isPaid,
+      orderStatus: isPaid ? 'confirmed' : 'pending_payment',
+      paymentStage: isPaid ? 'manual_marked_paid' : 'manual_marked_pending',
+      paidAt: isPaid ? new Date().toISOString() : null,
+    })
   }
 
   const handleDownloadProofs = () => {
@@ -1009,22 +1265,238 @@ function Admin({
                   <h2>{ui.registrationsTitle}</h2>
                   <p className="checkout-copy">{ui.registrationsCopy}</p>
                 </div>
-                <button
-                  className="button button--ghost"
-                  onClick={() =>
-                    setFilters({
-                      name: '',
-                      email: '',
-                      profile: '',
-                      registration: '',
-                      paymentStatus: '',
-                      bookingReference: '',
-                    })
-                  }
-                >
-                  {ui.clearFilters}
-                </button>
+                <div className="cta-row">
+                  <button
+                    className="button button--ghost"
+                    onClick={() => setShowManualForm((current) => !current)}
+                    type="button"
+                  >
+                    {showManualForm ? ui.hideManualRegistration : ui.addManualRegistration}
+                  </button>
+                  <button
+                    className="button button--ghost"
+                    onClick={() =>
+                      setFilters({
+                        name: '',
+                        email: '',
+                        profile: '',
+                        registration: '',
+                        paymentStatus: '',
+                        bookingReference: '',
+                      })
+                    }
+                    type="button"
+                  >
+                    {ui.clearFilters}
+                  </button>
+                </div>
               </div>
+
+              {showManualForm ? (
+                <div className="admin-editor-card">
+                  <h3>{ui.manualRegistrationTitle}</h3>
+                  <p className="checkout-copy">{ui.manualRegistrationCopy}</p>
+                  {manualSaveMessage ? <p className="admin-status">{manualSaveMessage}</p> : null}
+
+                  <div className="form-grid">
+                    <label className="field">
+                      <span>{ui.categoryLabel}</span>
+                      <select
+                        value={manualRegistration.variantId}
+                        onChange={(event) =>
+                          handleManualRegistrationChange('variantId', event.target.value)
+                        }
+                      >
+                        {variantOptions.map((variant) => (
+                          <option key={variant.id} value={variant.id}>
+                            {variant.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>{ui.packageTypeLabel}</span>
+                      <select
+                        value={manualRegistration.packageType}
+                        onChange={(event) =>
+                          handleManualRegistrationChange('packageType', event.target.value)
+                        }
+                      >
+                        {manualPackageOptions.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>{ui.paymentStateLabel}</span>
+                      <select
+                        value={manualRegistration.paymentStatus}
+                        onChange={(event) =>
+                          handleManualRegistrationChange('paymentStatus', event.target.value)
+                        }
+                      >
+                        <option value="paid">{ui.manualPaid}</option>
+                        <option value="pending">{ui.manualPending}</option>
+                      </select>
+                    </label>
+                    <label className="field field--full">
+                      <span>{ui.manualSourceLabel}</span>
+                      <input
+                        value={manualRegistration.adminNotes}
+                        onChange={(event) =>
+                          handleManualRegistrationChange('adminNotes', event.target.value)
+                        }
+                        placeholder="Email, phone, federation office, paper form..."
+                      />
+                    </label>
+                  </div>
+
+                  {manualAddonOptions.length ? (
+                    <div className="admin-subsection">
+                      <h4>{ui.addonSelectionLabel}</h4>
+                      <div className="registration-list registration-list--plain">
+                        {manualAddonOptions.map((addon) => (
+                          <label className="registration-list__item" key={addon.id}>
+                            <span className="admin-inline-check">
+                              <input
+                                type="checkbox"
+                                checked={manualRegistration.addonIds.includes(addon.id)}
+                                onChange={() => toggleManualAddon(addon.id)}
+                              />
+                              {addon.name}
+                            </span>
+                            <span>EUR {parseAmount(addon.price).toFixed(2)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="admin-subsection">
+                    <h4>{ui.participantDetailsLabel}</h4>
+                    {Array.from({ length: manualParticipantCount }).map((_, index) => {
+                      const participant = manualRegistration.participants[index]
+
+                      return (
+                        <div className="admin-editor-card" key={`manual-participant-${index}`}>
+                          <strong>{t.admin.participantIndexed.replace('{index}', index + 1)}</strong>
+                          <div className="form-grid">
+                            <label className="field">
+                              <span>{t.checkout.firstName}</span>
+                              <input
+                                value={participant.firstName}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'firstName', event.target.value)
+                                }
+                              />
+                              {manualErrors[`firstName-${index}`] ? <small className="field-error">{manualErrors[`firstName-${index}`]}</small> : null}
+                            </label>
+                            <label className="field">
+                              <span>{t.checkout.lastName}</span>
+                              <input
+                                value={participant.lastName}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'lastName', event.target.value)
+                                }
+                              />
+                              {manualErrors[`lastName-${index}`] ? <small className="field-error">{manualErrors[`lastName-${index}`]}</small> : null}
+                            </label>
+                            <label className="field field--full">
+                              <span>{t.checkout.email}</span>
+                              <input
+                                type="email"
+                                value={participant.email}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'email', event.target.value)
+                                }
+                              />
+                              {manualErrors[`email-${index}`] ? <small className="field-error">{manualErrors[`email-${index}`]}</small> : null}
+                            </label>
+                            <label className="field">
+                              <span>{t.checkout.country}</span>
+                              <select
+                                value={participant.country}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'country', event.target.value)
+                                }
+                              >
+                                <option value="">{t.checkout.selectCountry}</option>
+                                {countryOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              {manualErrors[`country-${index}`] ? <small className="field-error">{manualErrors[`country-${index}`]}</small> : null}
+                            </label>
+                            <label className="field">
+                              <span>{t.checkout.memberFederation}</span>
+                              <select
+                                value={participant.memberFederation}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'memberFederation', event.target.value)
+                                }
+                              >
+                                <option value="">{t.checkout.selectFederation}</option>
+                                {federationOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              {manualErrors[`memberFederation-${index}`] ? <small className="field-error">{manualErrors[`memberFederation-${index}`]}</small> : null}
+                            </label>
+                            <label className="field">
+                              <span>{t.checkout.role}</span>
+                              <select
+                                value={participant.role}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'role', event.target.value)
+                                }
+                              >
+                                <option value="">{t.checkout.selectRole}</option>
+                                {roleOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              {manualErrors[`role-${index}`] ? <small className="field-error">{manualErrors[`role-${index}`]}</small> : null}
+                            </label>
+                            <label className="field">
+                              <span>{t.checkout.gender}</span>
+                              <select
+                                value={participant.gender}
+                                onChange={(event) =>
+                                  handleManualParticipantChange(index, 'gender', event.target.value)
+                                }
+                              >
+                                <option value="">{t.checkout.gender}</option>
+                                <option value="Female">{t.checkout.female}</option>
+                                <option value="Male">{t.checkout.male}</option>
+                              </select>
+                              {manualErrors[`gender-${index}`] ? <small className="field-error">{manualErrors[`gender-${index}`]}</small> : null}
+                            </label>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="cta-row">
+                    <button
+                      className="button button--primary"
+                      type="button"
+                      disabled={isManualSaving}
+                      onClick={handleCreateManualRegistration}
+                    >
+                      {isManualSaving ? `${ui.createManualRegistration}...` : ui.createManualRegistration}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="admin-kpi-grid admin-kpi-grid--cards">
                 <div className="admin-kpi-card">
@@ -1202,6 +1674,23 @@ function Admin({
                       <span>{ui.paymentAmount}</span>
                       <strong>EUR {selectedRegistration.totalAmountNumber.toFixed(2)}</strong>
                     </div>
+                  </div>
+
+                  <div className="cta-row">
+                    <button
+                      className="button button--primary"
+                      type="button"
+                      onClick={() => handlePaymentStateUpdate(selectedRegistration.id, 'paid')}
+                    >
+                      {ui.markAsPaid}
+                    </button>
+                    <button
+                      className="button button--ghost"
+                      type="button"
+                      onClick={() => handlePaymentStateUpdate(selectedRegistration.id, 'pending')}
+                    >
+                      {ui.markAsPending}
+                    </button>
                   </div>
 
                   <div className="admin-subsection">
