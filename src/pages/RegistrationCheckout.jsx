@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   getCountryOptions,
   getFederationOptions,
@@ -203,6 +203,7 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   const [errors, setErrors] = useState({})
   const [requestError, setRequestError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const submitLockRef = useRef(false)
 
   const packageOptions = variant.packageOptions || []
   const selectedPackage =
@@ -309,14 +310,29 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    if (submitLockRef.current || isLoading) {
+      return
+    }
+
     if (!validateForm()) {
       return
     }
 
+    if (totalAmount <= 0) {
+      setRequestError(t.checkout.errors.zeroAmountNotAllowed)
+      return
+    }
+
+    submitLockRef.current = true
     setIsLoading(true)
     setRequestError('')
 
     try {
+      const clientSubmissionId =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `submit-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
       const response = await fetch('/.netlify/functions/create-checkout', {
         method: 'POST',
         headers: {
@@ -328,6 +344,7 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
           addonIds: selectedAddons,
           language,
           participants: participants.slice(0, participantCount),
+          clientSubmissionId,
         }),
       })
 
@@ -341,6 +358,7 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
     } catch (error) {
       setRequestError(error.message || t.checkout.errors.checkoutFailed)
     } finally {
+      submitLockRef.current = false
       setIsLoading(false)
     }
   }

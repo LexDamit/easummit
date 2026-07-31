@@ -73,6 +73,9 @@ const uiTranslations = {
         function404:
           'Netlify Functions are not available on this dev server. Run the app with `netlify dev` instead of plain `vite`.',
         checkoutFailed: 'Unable to create checkout.',
+        zeroAmountNotAllowed: 'Please select at least one paid option before continuing.',
+        duplicateSubmission:
+          'This registration is already being created. Please wait a moment.',
       },
       conditionsByVariant: {
         local: [
@@ -252,6 +255,10 @@ const uiTranslations = {
         function404:
           "Les fonctions Netlify ne sont pas disponibles sur ce serveur de développement. Lancez l'application avec `netlify dev` au lieu de `vite`.",
         checkoutFailed: 'Impossible de créer le paiement.',
+        zeroAmountNotAllowed:
+          'Veuillez sélectionner au moins une option payante avant de continuer.',
+        duplicateSubmission:
+          "Cette inscription est déjà en cours de création. Veuillez patienter un instant.",
       },
       conditionsByVariant: {
         local: [

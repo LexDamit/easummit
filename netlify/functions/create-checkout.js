@@ -33,6 +33,23 @@ const getOrderStatusFromPayment = (paymentStatus, paymentConfirmed) => {
   return 'pending_payment'
 }
 
+const buildParticipantFingerprint = (participants = []) =>
+  participants
+    .map((participant) =>
+      [
+        participant?.firstName,
+        participant?.lastName,
+        participant?.email,
+        participant?.country,
+        participant?.memberFederation,
+        participant?.role,
+        participant?.gender,
+      ]
+        .map((value) => String(value || '').trim().toLowerCase())
+        .join('|'),
+    )
+    .join('||')
+
 const loadTrustedCatalog = async () => {
   const db = getAdminDb()
 
@@ -162,6 +179,7 @@ exports.handler = async (event) => {
       addonIds = [],
       participants = [],
       language = 'en',
+      clientSubmissionId = '',
     } = JSON.parse(event.body || '{}')
 
     const catalog = normalizeTrustedCatalog(await loadTrustedCatalog())
@@ -200,6 +218,16 @@ exports.handler = async (event) => {
       Number(selectedPackage.price) +
       addons.reduce((sum, item) => sum + Number(item.price || 0), 0)
 
+    if (totalAmount <= 0) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: 'Please select at least one paid option before continuing.',
+        }),
+      }
+    }
+
     if (
       !process.env.SUMUP_API_KEY ||
       !process.env.SUMUP_MERCHANT_CODE ||
@@ -219,34 +247,53 @@ exports.handler = async (event) => {
       .join(' ')
       .trim()
 
-    if (db) {
-      await db.collection('registrations').doc(bookingReference).set({
-        bookingReference,
-        variantId: variant.id,
-        variantName: variant.title,
-        packageType,
-        packageName: selectedPackage.name,
-        participantCount,
-        baseItem: {
-          name: selectedPackage.baseItemName,
-          price: Number(selectedPackage.price),
-        },
-        addons,
-        totalAmount,
-        currency: 'EUR',
-        language: language === 'fr' ? 'fr' : 'en',
-        participants: sanitizedParticipants,
-        primaryParticipant,
-        paymentStatus: 'pending',
-        paymentConfirmed: false,
-        orderStatus: getOrderStatusFromPayment('pending', false),
-        paymentStage: 'checkout_created',
-        paidAt: null,
-        hotelRoom: '',
-        adminNotes: '',
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      })
+    const normalizedSubmissionId = String(clientSubmissionId || '').trim()
+    const requestFingerprint = [
+      variant.id,
+      packageType,
+      [...addonIds].sort().join(','),
+      buildParticipantFingerprint(sanitizedParticipants),
+    ].join('::')
+
+    let requestRef = null
+    if (db && normalizedSubmissionId) {
+      requestRef = db.collection('checkoutRequests').doc(normalizedSubmissionId)
+
+      try {
+        await requestRef.create({
+          clientSubmissionId: normalizedSubmissionId,
+          requestFingerprint,
+          variantId: variant.id,
+          packageType,
+          participantEmail: primaryParticipant.email || '',
+          createdAt: Timestamp.now(),
+          status: 'started',
+        })
+      } catch (error) {
+        const existing = await requestRef.get()
+        const existingData = existing.exists ? existing.data() : null
+
+        if (existingData?.checkoutUrl && existingData?.bookingReference) {
+          return {
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              success: true,
+              checkoutUrl: existingData.checkoutUrl,
+              bookingReference: existingData.bookingReference,
+              duplicate: true,
+            }),
+          }
+        }
+
+        return {
+          statusCode: 409,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            error: 'This registration is already being created. Please wait a moment.',
+          }),
+        }
+      }
     }
 
     const payload = {
@@ -286,15 +333,50 @@ exports.handler = async (event) => {
     }
 
     if (db) {
-      await db.collection('registrations').doc(bookingReference).set(
-        {
-          paymentStage: 'checkout_redirected',
-          sumupCheckoutId: data.id || data.checkout_id || null,
-          hostedCheckoutUrl: checkoutUrl,
-          updatedAt: Timestamp.now(),
+      await db.collection('registrations').doc(bookingReference).set({
+        bookingReference,
+        variantId: variant.id,
+        variantName: variant.title,
+        packageType,
+        packageName: selectedPackage.name,
+        participantCount,
+        baseItem: {
+          name: selectedPackage.baseItemName,
+          price: Number(selectedPackage.price),
         },
-        { merge: true },
-      )
+        addons,
+        totalAmount,
+        currency: 'EUR',
+        language: language === 'fr' ? 'fr' : 'en',
+        participants: sanitizedParticipants,
+        primaryParticipant,
+        paymentStatus: 'pending',
+        paymentConfirmed: false,
+        orderStatus: getOrderStatusFromPayment('pending', false),
+        paymentStage: 'checkout_redirected',
+        paidAt: null,
+        hotelRoom: '',
+        adminNotes: '',
+        sumupCheckoutId: data.id || data.checkout_id || null,
+        hostedCheckoutUrl: checkoutUrl,
+        clientSubmissionId: normalizedSubmissionId || null,
+        requestFingerprint,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      })
+
+      if (requestRef) {
+        await requestRef.set(
+          {
+            bookingReference,
+            checkoutUrl,
+            sumupCheckoutId: data.id || data.checkout_id || null,
+            status: 'checkout_redirected',
+            updatedAt: Timestamp.now(),
+          },
+          { merge: true },
+        )
+      }
     }
 
     return {
