@@ -81,6 +81,34 @@ const getPaymentTone = (value) => {
   return 'pending'
 }
 
+const toTitleCase = (value) =>
+  String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+
+const getPaymentStatusDisplay = (registration, ui) => {
+  if (isAttendanceConfirmed(registration)) {
+    return ui.validLabel
+  }
+
+  const tone = getPaymentTone(registration?.paymentStatus)
+
+  if (tone === 'pending') {
+    return ui.pendingLabel
+  }
+
+  if (tone === 'failed') {
+    return ui.failedLabel
+  }
+
+  if (tone === 'cancelled') {
+    return ui.cancelledLabel
+  }
+
+  return toTitleCase(registration?.paymentStatus) || ui.pendingLabel
+}
+
 const formatTimestamp = (value, language) => {
   if (!value) {
     return '—'
@@ -170,7 +198,7 @@ const buildPaymentProofMarkup = (registrations, language, ui) => {
           </div>
           <div class="proof-grid">
             <p><strong>${ui.referenceLabel}:</strong> ${registration.bookingReference || registration.id}</p>
-            <p><strong>${ui.paymentStatusLabel}:</strong> ${registration.paymentStatus || ui.pendingLabel}</p>
+            <p><strong>${ui.paymentStatusLabel}:</strong> ${getPaymentStatusDisplay(registration, ui)}</p>
             <p><strong>${ui.packageLabel}:</strong> ${registration.packageName || '—'}</p>
             <p><strong>${ui.registeredLabel}:</strong> ${formatTimestamp(registration.createdAt, language)}</p>
           </div>
@@ -279,7 +307,10 @@ function Admin({
           packageLabel: 'Package',
           referenceLabel: 'Reference',
           statusAll: 'All',
+          validLabel: 'Valide',
           pendingLabel: 'Pending',
+          failedLabel: 'Failed',
+          cancelledLabel: 'Cancelled',
           paidLabel: 'Paid',
           selectedTransactions: 'Selected transactions',
           selectAll: 'Select all',
@@ -398,7 +429,10 @@ function Admin({
           packageLabel: 'Package',
           referenceLabel: 'Reference',
           statusAll: 'All',
+          validLabel: 'Valid',
           pendingLabel: 'Pending',
+          failedLabel: 'Failed',
+          cancelledLabel: 'Cancelled',
           paidLabel: 'Paid',
           selectedTransactions: 'Selected transactions',
           selectAll: 'Select all',
@@ -646,13 +680,14 @@ function Admin({
           ]
             .filter(Boolean)
             .join(' • '),
-          paymentStatus: registration.paymentStatus,
+          paymentStatus: getPaymentStatusDisplay(registration, ui),
+          paymentStatusRaw: registration.paymentStatus,
           totalAmountNumber: registration.totalAmountNumber,
           registeredAtLabel: registration.registeredAtLabel,
           paidAtLabel: registration.paidAtLabel,
         }))
       }),
-    [adminRegistrations, language],
+    [adminRegistrations, language, ui],
   )
 
   const filteredRegistrations = useMemo(
@@ -1655,7 +1690,7 @@ function Admin({
                         <td>
                           <span
                             className={`status-pill status-pill--${getPaymentTone(
-                              item.paymentStatus,
+                              item.paymentStatusRaw,
                             )}`}
                           >
                             {item.paymentStatus || ui.pendingLabel}
@@ -1684,7 +1719,7 @@ function Admin({
                         selectedRegistration.paymentStatus,
                       )}`}
                     >
-                      {selectedRegistration.paymentStatus || ui.pendingLabel}
+                      {getPaymentStatusDisplay(selectedRegistration, ui)}
                     </span>
                   </div>
                   <div className="admin-kpi-grid registration-detail__stats">
@@ -1698,7 +1733,7 @@ function Admin({
                     </div>
                     <div className="admin-kpi-card">
                       <span>{ui.paymentStatus}</span>
-                      <strong>{selectedRegistration.paymentStatus || ui.pendingLabel}</strong>
+                      <strong>{getPaymentStatusDisplay(selectedRegistration, ui)}</strong>
                     </div>
                     <div className="admin-kpi-card">
                       <span>{ui.paymentAmount}</span>
@@ -1919,7 +1954,7 @@ function Admin({
                         </td>
                         <td>{item.bookingReference || item.id}</td>
                         <td>{item.participantName || '—'}</td>
-                        <td>{item.paymentStatus || ui.pendingLabel}</td>
+                        <td>{getPaymentStatusDisplay(item, ui)}</td>
                         <td>EUR {item.totalAmountNumber.toFixed(2)}</td>
                         <td>{item.paidAtLabel}</td>
                       </tr>
