@@ -318,11 +318,6 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
       return
     }
 
-    if (totalAmount <= 0) {
-      setRequestError(t.checkout.errors.zeroAmountNotAllowed)
-      return
-    }
-
     submitLockRef.current = true
     setIsLoading(true)
     setRequestError('')

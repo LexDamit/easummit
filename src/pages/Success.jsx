@@ -396,7 +396,14 @@ function Success({ language, navigate, t }) {
     registration?.customer ??
     null
 
-  const paymentConfirmed = Boolean(registration?.paymentConfirmed)
+  const normalizedPaymentStatus = String(registration?.paymentStatus || '').toLowerCase()
+  const registrationConfirmed =
+    Boolean(registration?.paymentConfirmed) ||
+    registration?.orderStatus === 'confirmed' ||
+    normalizedPaymentStatus.includes('free') ||
+    normalizedPaymentStatus.includes('invite') ||
+    normalizedPaymentStatus.includes('guest') ||
+    normalizedPaymentStatus.includes('complimentary')
   const confirmationEmailSent = Boolean(registration?.confirmationEmail?.sentAt)
 
   useEffect(() => {
@@ -420,7 +427,18 @@ function Success({ language, navigate, t }) {
 
         setRegistration(data.registration)
 
-        if (data.registration.paymentConfirmed) {
+        const registrationStatus = String(
+          data.registration.paymentStatus || '',
+        ).toLowerCase()
+        const isConfirmed =
+          Boolean(data.registration.paymentConfirmed) ||
+          data.registration.orderStatus === 'confirmed' ||
+          registrationStatus.includes('free') ||
+          registrationStatus.includes('invite') ||
+          registrationStatus.includes('guest') ||
+          registrationStatus.includes('complimentary')
+
+        if (isConfirmed) {
           const qr = await QRCode.toDataURL(
             JSON.stringify({
               ref: data.registration.bookingReference,
@@ -514,9 +532,9 @@ function Success({ language, navigate, t }) {
           <span className="section-chip">{t.success.chip}</span>
           <h1 className="checkout-title">{t.success.title}</h1>
           <p className="checkout-copy">
-            {paymentConfirmed ? t.success.copy : t.success.pendingCopy}
+            {registrationConfirmed ? t.success.copy : t.success.pendingCopy}
           </p>
-          {paymentConfirmed && confirmationEmailSent ? (
+          {registrationConfirmed && confirmationEmailSent ? (
             <p className="checkout-copy">{t.success.emailSent}</p>
           ) : null}
 
@@ -548,12 +566,14 @@ function Success({ language, navigate, t }) {
                 <div className="ticket-summary-row">
                   <span>{t.success.paymentStatus}</span>
                   <strong>
-                    {paymentConfirmed ? t.success.paymentConfirmed : t.success.paymentPending}
+                    {registrationConfirmed
+                      ? t.success.paymentConfirmed
+                      : t.success.paymentPending}
                   </strong>
                 </div>
               </div>
 
-              {paymentConfirmed ? (
+              {registrationConfirmed ? (
                 <div className="ticket-card ticket-card--featured">
                   <div className="ticket-card__content">
                     <span className="section-chip">{t.success.ticketChip}</span>

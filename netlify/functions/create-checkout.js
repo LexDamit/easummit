@@ -33,6 +33,22 @@ const getOrderStatusFromPayment = (paymentStatus, paymentConfirmed) => {
   return 'pending_payment'
 }
 
+const isAttendanceConfirmedFromStatus = (paymentStatus, paymentConfirmed) => {
+  const normalized = String(paymentStatus || '').toLowerCase()
+
+  return (
+    Boolean(paymentConfirmed) ||
+    normalized.includes('paid') ||
+    normalized.includes('success') ||
+    normalized.includes('complete') ||
+    normalized.includes('settled') ||
+    normalized.includes('invite') ||
+    normalized.includes('guest') ||
+    normalized.includes('complimentary') ||
+    normalized.includes('free')
+  )
+}
+
 const buildParticipantFingerprint = (participants = []) =>
   participants
     .map((participant) =>
@@ -218,24 +234,6 @@ exports.handler = async (event) => {
       Number(selectedPackage.price) +
       addons.reduce((sum, item) => sum + Number(item.price || 0), 0)
 
-    if (totalAmount <= 0) {
-      return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          error: 'Please select at least one paid option before continuing.',
-        }),
-      }
-    }
-
-    if (
-      !process.env.SUMUP_API_KEY ||
-      !process.env.SUMUP_MERCHANT_CODE ||
-      !process.env.APP_URL
-    ) {
-      throw new Error('Missing required SumUp or app environment variables.')
-    }
-
     const bookingReference = `FLA-${Date.now()}`
     const db = getAdminDb()
     const primaryParticipant = sanitizedParticipants[0] || {}
@@ -254,6 +252,9 @@ exports.handler = async (event) => {
       [...addonIds].sort().join(','),
       buildParticipantFingerprint(sanitizedParticipants),
     ].join('::')
+    const redirectUrl = `${getBaseAppUrl(event)}/${variant.id}?status=success&ref=${encodeURIComponent(
+      bookingReference,
+    )}`
 
     let requestRef = null
     if (db && normalizedSubmissionId) {
@@ -296,6 +297,82 @@ exports.handler = async (event) => {
       }
     }
 
+   if (totalAmount <= 0) {
+      if (!db) {
+        throw new Error(
+          'Server catalog unavailable. Firebase Admin environment variables are required for free registrations.',
+        )
+      }
+
+      const freePaymentStatus = 'free'
+      const freePaymentConfirmed = true
+
+      await db.collection('registrations').doc(bookingReference).set({
+        bookingReference,
+        variantId: variant.id,
+        variantName: variant.title,
+        packageType,
+        packageName: selectedPackage.name,
+        participantCount,
+        baseItem: {
+          name: selectedPackage.baseItemName,
+          price: Number(selectedPackage.price),
+        },
+        addons,
+        totalAmount,
+        currency: 'EUR',
+        language: language === 'fr' ? 'fr' : 'en',
+        participants: sanitizedParticipants,
+        primaryParticipant,
+        paymentStatus: freePaymentStatus,
+        paymentConfirmed: freePaymentConfirmed,
+        orderStatus: getOrderStatusFromPayment(
+          freePaymentStatus,
+          freePaymentConfirmed,
+        ),
+        paymentStage: 'free_registration',
+        paidAt: Timestamp.now(),
+        hotelRoom: '',
+        adminNotes: '',
+        hostedCheckoutUrl: redirectUrl,
+        clientSubmissionId: normalizedSubmissionId || null,
+        requestFingerprint,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      })
+
+      if (requestRef) {
+        await requestRef.set(
+          {
+            bookingReference,
+            checkoutUrl: redirectUrl,
+            status: 'free_registration_created',
+            updatedAt: Timestamp.now(),
+          },
+          { merge: true },
+        )
+      }
+
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: true,
+          checkoutUrl: redirectUrl,
+          bookingReference,
+          freeRegistration: true,
+        }),
+      }
+    }
+
+    if (
+      !process.env.SUMUP_API_KEY ||
+      !process.env.SUMUP_MERCHANT_CODE ||
+      !process.env.APP_URL
+    ) {
+      throw new Error('Missing required SumUp or app environment variables.')
+    }
+
     const payload = {
       checkout_reference: bookingReference,
       amount: totalAmount,
@@ -303,9 +380,7 @@ exports.handler = async (event) => {
       description: `${variant.title} - ${selectedPackage.name}${attendeeName ? ` for ${attendeeName}` : ''}`,
       merchant_code: process.env.SUMUP_MERCHANT_CODE,
       return_url: `${getWebhookBaseUrl(event)}/.netlify/functions/sumup-webhook`,
-      redirect_url: `${getBaseAppUrl(event)}/${variant.id}?status=success&ref=${encodeURIComponent(
-        bookingReference,
-      )}`,
+      redirect_url: redirectUrl,
       hosted_checkout: { enabled: true },
       customer_email: primaryParticipant.email,
       customer_name: attendeeName || undefined,
