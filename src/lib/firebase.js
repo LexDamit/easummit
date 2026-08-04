@@ -7,6 +7,7 @@ import {
 } from 'firebase/auth'
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getFirestore,
@@ -206,4 +207,12 @@ export async function createManualRegistration(registration) {
   })
 
   return bookingReference
+}
+
+export async function deleteRegistrationAdmin(registrationId) {
+  if (!db) {
+    throw new Error(firebaseInitError || 'Firebase firestore is not configured.')
+  }
+
+  await deleteDoc(doc(db, 'registrations', registrationId))
 }

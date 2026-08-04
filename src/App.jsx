@@ -16,6 +16,7 @@ import {
   firebaseEnabled,
   firebaseInitializationError,
   createManualRegistration,
+  deleteRegistrationAdmin,
   loadHotelSettings,
   loadRegistrationCatalog,
   saveHotelSettings,
@@ -202,6 +203,7 @@ function App() {
           hotelSettings={hotelSettings}
           onSaveHotelSettings={handleSaveHotelSettings}
           onCreateManualRegistration={createManualRegistration}
+          onDeleteRegistration={deleteRegistrationAdmin}
           onUpdateRegistration={updateRegistrationAdmin}
           registrations={adminRegistrations}
           t={t}

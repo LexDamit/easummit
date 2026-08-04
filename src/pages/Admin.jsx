@@ -263,6 +263,7 @@ function Admin({
   hotelSettings,
   language,
   onCreateManualRegistration,
+  onDeleteRegistration,
   onLogin,
   onLogout,
   onSaveCatalog,
@@ -394,6 +395,10 @@ function Admin({
           markAsPaid: 'Marquer comme paye',
           markAsPending: 'Remettre en attente',
           markAsInvited: 'Marquer comme invite',
+          deleteRegistration: "Supprimer l'inscription",
+          deleteRegistrationConfirm:
+            "Voulez-vous vraiment supprimer cette inscription ? Cette action est definitive.",
+          deleteRegistrationFailed: "Impossible de supprimer l'inscription.",
         }
       : {
           tabs: {
@@ -516,6 +521,10 @@ function Admin({
           markAsPaid: 'Mark as paid',
           markAsPending: 'Mark as pending',
           markAsInvited: 'Mark as invited',
+          deleteRegistration: 'Delete registration',
+          deleteRegistrationConfirm:
+            'Do you really want to delete this registration? This action cannot be undone.',
+          deleteRegistrationFailed: 'Unable to delete this registration.',
         }
 
   const [email, setEmail] = useState('')
@@ -1069,6 +1078,23 @@ function Admin({
           : 'manual_marked_pending',
       paidAt: isPaid ? new Date().toISOString() : null,
     })
+  }
+
+  const handleDeleteRegistration = async (registration) => {
+    if (!registration?.id) {
+      return
+    }
+
+    if (!window.confirm(ui.deleteRegistrationConfirm)) {
+      return
+    }
+
+    try {
+      await onDeleteRegistration(registration.id)
+      setSelectedRegistrationKey('')
+    } catch (error) {
+      window.alert(error.message || ui.deleteRegistrationFailed)
+    }
   }
 
   const handleDownloadProofs = () => {
@@ -1762,6 +1788,13 @@ function Admin({
                       onClick={() => handlePaymentStateUpdate(selectedRegistration.id, 'pending')}
                     >
                       {ui.markAsPending}
+                    </button>
+                    <button
+                      className="button button--ghost"
+                      type="button"
+                      onClick={() => handleDeleteRegistration(selectedRegistration)}
+                    >
+                      {ui.deleteRegistration}
                     </button>
                   </div>
 
