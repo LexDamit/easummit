@@ -73,7 +73,8 @@ const uiTranslations = {
         function404:
           'Netlify Functions are not available on this dev server. Run the app with `netlify dev` instead of plain `vite`.',
         checkoutFailed: 'Unable to create checkout.',
-        zeroAmountNotAllowed: 'Please select at least one paid option before continuing.',
+        zeroAmountNotAllowed:
+          'Unable to create the registration right now. Please try again.',
         duplicateSubmission:
           'This registration is already being created. Please wait a moment.',
       },
