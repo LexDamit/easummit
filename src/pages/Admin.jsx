@@ -380,6 +380,7 @@ function Admin({
           countryParticipantsSingle: '{count} participant',
           noCountries: 'Aucun pays dans cette selection.',
           actionsLabel: 'Actions',
+          deleteShort: 'Supprimer',
           addManualRegistration: 'Ajouter une inscription manuelle',
           hideManualRegistration: 'Masquer le formulaire',
           manualRegistrationTitle: 'Inscription manuelle',
@@ -513,6 +514,7 @@ function Admin({
           countryParticipantsSingle: '{count} participant',
           noCountries: 'No countries in this selection.',
           actionsLabel: 'Actions',
+          deleteShort: 'Delete',
           addManualRegistration: 'Add manual registration',
           hideManualRegistration: 'Hide form',
           manualRegistrationTitle: 'Manual registration',
@@ -1719,7 +1721,7 @@ function Admin({
                       <th>{ui.paymentAmount}</th>
                       <th>{ui.registeredAt}</th>
                       <th>{ui.paidAt}</th>
-                      <th>{ui.actionsLabel}</th>
+                      <th className="admin-table__actions-head">{ui.actionsLabel}</th>
                     </tr>
                     <tr className="admin-table__filters">
                       {[
@@ -1812,12 +1814,14 @@ function Admin({
                           <button
                             className="admin-row-action admin-row-action--danger"
                             type="button"
+                            aria-label={ui.deleteRegistration}
+                            title={ui.deleteRegistration}
                             onClick={(event) => {
                               event.stopPropagation()
                               handleDeleteRegistration(item.registration)
                             }}
                           >
-                            {ui.deleteRegistration}
+                            {ui.deleteShort}
                           </button>
                         </td>
                       </tr>
