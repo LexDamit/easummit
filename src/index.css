@@ -1011,6 +1011,41 @@ textarea {
   line-height: 1.45;
 }
 
+.admin-inline-details {
+  margin-top: 0.45rem;
+}
+
+.admin-inline-details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.58rem;
+  border-radius: 999px;
+  background: rgba(17, 82, 165, 0.08);
+  color: #0f4ea8;
+  font-size: 0.77rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-inline-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-inline-details__body {
+  display: grid;
+  gap: 0.32rem;
+  margin-top: 0.55rem;
+}
+
+.admin-inline-details__label {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .admin-table__stack-cell--wide {
   min-width: 220px;
 }

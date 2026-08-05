@@ -381,6 +381,9 @@ function Admin({
           noCountries: 'Aucun pays dans cette selection.',
           actionsLabel: 'Actions',
           deleteShort: 'Supprimer',
+          detailsLabel: 'Details',
+          profileSummaryLabel: 'Profil',
+          registrationSummaryLabel: 'Options',
           addManualRegistration: 'Ajouter une inscription manuelle',
           hideManualRegistration: 'Masquer le formulaire',
           manualRegistrationTitle: 'Inscription manuelle',
@@ -515,6 +518,9 @@ function Admin({
           noCountries: 'No countries in this selection.',
           actionsLabel: 'Actions',
           deleteShort: 'Delete',
+          detailsLabel: 'Details',
+          profileSummaryLabel: 'Profile',
+          registrationSummaryLabel: 'Options',
           addManualRegistration: 'Add manual registration',
           hideManualRegistration: 'Hide form',
           manualRegistrationTitle: 'Manual registration',
@@ -1765,33 +1771,55 @@ function Admin({
                         </td>
                         <td className="admin-table__stack-cell">
                           <strong>{item.countryLabel || '-'}</strong>
-                          <span>{item.federationLabel || '-'}</span>
-                          <span>
-                            {[item.roleLabel, item.genderLabel].filter(Boolean).join(' / ') || '-'}
-                          </span>
-                          <span>{item.participantEmail || '-'}</span>
+                          <details
+                            className="admin-inline-details"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <summary>{ui.detailsLabel}</summary>
+                            <div className="admin-inline-details__body">
+                              <span className="admin-inline-details__label">
+                                {ui.profileSummaryLabel}
+                              </span>
+                              <span>{item.federationLabel || '-'}</span>
+                              <span>
+                                {[item.roleLabel, item.genderLabel].filter(Boolean).join(' / ') || '-'}
+                              </span>
+                              <span>{item.participantEmail || '-'}</span>
+                            </div>
+                          </details>
                         </td>
                         <td className="admin-table__stack-cell admin-table__stack-cell--wide">
                           <strong>{item.packageName || '-'}</strong>
                           <span>{item.variantName || '-'}</span>
-                          <div className="admin-registration-options">
-                            {item.selectedOptions?.length ? (
-                              item.selectedOptions.map((option, index) => (
-                                <span
-                                  key={`${item.key}-option-${index}`}
-                                  className={`admin-registration-options__item${
-                                    option.isBase ? ' is-base' : ''
-                                  }`}
-                                >
-                                  {formatAddonLine(option)}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="admin-registration-options__empty">
-                                {ui.noAddonsSelected}
+                          <details
+                            className="admin-inline-details"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <summary>{ui.detailsLabel}</summary>
+                            <div className="admin-inline-details__body">
+                              <span className="admin-inline-details__label">
+                                {ui.registrationSummaryLabel}
                               </span>
-                            )}
-                          </div>
+                              <div className="admin-registration-options">
+                                {item.selectedOptions?.length ? (
+                                  item.selectedOptions.map((option, index) => (
+                                    <span
+                                      key={`${item.key}-option-${index}`}
+                                      className={`admin-registration-options__item${
+                                        option.isBase ? ' is-base' : ''
+                                      }`}
+                                    >
+                                      {formatAddonLine(option)}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="admin-registration-options__empty">
+                                    {ui.noAddonsSelected}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </details>
                         </td>
                         <td className="admin-table__reference-cell">
                           {item.bookingReference || item.id}
