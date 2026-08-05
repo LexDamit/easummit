@@ -374,6 +374,12 @@ function Admin({
           quickPending: 'En attente',
           quickHotel: 'Hotel',
           quickShared: 'A 2',
+          countryOverview: 'Vue par pays',
+          countryOverviewCopy:
+            'Repartition des participants selon la selection et les filtres actifs.',
+          countryParticipants: '{count} participants',
+          countryParticipantsSingle: '{count} participant',
+          noCountries: 'Aucun pays dans cette selection.',
           addManualRegistration: 'Ajouter une inscription manuelle',
           hideManualRegistration: 'Masquer le formulaire',
           manualRegistrationTitle: 'Inscription manuelle',
@@ -500,6 +506,12 @@ function Admin({
           quickPending: 'Pending',
           quickHotel: 'Hotel',
           quickShared: '2 people',
+          countryOverview: 'Country overview',
+          countryOverviewCopy:
+            'Participant distribution for the current selection and active filters.',
+          countryParticipants: '{count} participants',
+          countryParticipantsSingle: '{count} participant',
+          noCountries: 'No countries in this selection.',
           addManualRegistration: 'Add manual registration',
           hideManualRegistration: 'Hide form',
           manualRegistrationTitle: 'Manual registration',
@@ -751,6 +763,37 @@ function Admin({
       filteredRegistrations[0] ||
       null,
     [filteredRegistrations, selectedRegistrationKey],
+  )
+
+  const countryOverview = useMemo(
+    () =>
+      Object.values(
+        filteredRegistrations.reduce((accumulator, item) => {
+          const key = item.countryLabel || 'Unknown'
+
+          if (!accumulator[key]) {
+            accumulator[key] = {
+              country: key,
+              count: 0,
+              variants: new Set(),
+            }
+          }
+
+          accumulator[key].count += 1
+
+          if (item.variantName) {
+            accumulator[key].variants.add(item.variantName)
+          }
+
+          return accumulator
+        }, {}),
+      )
+        .map((item) => ({
+          ...item,
+          variants: Array.from(item.variants),
+        }))
+        .sort((left, right) => right.count - left.count || left.country.localeCompare(right.country)),
+    [filteredRegistrations],
   )
 
   const selectedRegistration = selectedRegistrationRow?.registration || null
@@ -1625,6 +1668,34 @@ function Admin({
                     {label}
                   </button>
                 ))}
+              </div>
+
+              <div className="admin-country-overview">
+                <div className="admin-panel__top admin-panel__top--compact">
+                  <div>
+                    <h3>{ui.countryOverview}</h3>
+                    <p className="checkout-copy">{ui.countryOverviewCopy}</p>
+                  </div>
+                </div>
+                {countryOverview.length ? (
+                  <div className="admin-country-grid">
+                    {countryOverview.map((item) => (
+                      <div className="admin-country-card" key={item.country}>
+                        <strong>{item.country}</strong>
+                        <span>
+                          {item.count === 1
+                            ? ui.countryParticipantsSingle.replace('{count}', item.count)
+                            : ui.countryParticipants.replace('{count}', item.count)}
+                        </span>
+                        {item.variants.length ? (
+                          <small>{item.variants.join(' · ')}</small>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="checkout-copy">{ui.noCountries}</p>
+                )}
               </div>
 
               <div className="admin-table-wrap">
