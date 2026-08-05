@@ -379,6 +379,7 @@ function Admin({
           countryParticipants: '{count} participants',
           countryParticipantsSingle: '{count} participant',
           noCountries: 'Aucun pays dans cette selection.',
+          actionsLabel: 'Actions',
           addManualRegistration: 'Ajouter une inscription manuelle',
           hideManualRegistration: 'Masquer le formulaire',
           manualRegistrationTitle: 'Inscription manuelle',
@@ -511,6 +512,7 @@ function Admin({
           countryParticipants: '{count} participants',
           countryParticipantsSingle: '{count} participant',
           noCountries: 'No countries in this selection.',
+          actionsLabel: 'Actions',
           addManualRegistration: 'Add manual registration',
           hideManualRegistration: 'Hide form',
           manualRegistrationTitle: 'Manual registration',
@@ -1717,6 +1719,7 @@ function Admin({
                       <th>{ui.paymentAmount}</th>
                       <th>{ui.registeredAt}</th>
                       <th>{ui.paidAt}</th>
+                      <th>{ui.actionsLabel}</th>
                     </tr>
                     <tr className="admin-table__filters">
                       {[
@@ -1740,6 +1743,7 @@ function Admin({
                           />
                         </th>
                       ))}
+                      <th />
                       <th />
                       <th />
                     </tr>
@@ -1804,6 +1808,18 @@ function Admin({
                         </td>
                         <td className="admin-table__date-cell">{item.registeredAtLabel}</td>
                         <td className="admin-table__date-cell">{item.paidAtLabel}</td>
+                        <td className="admin-table__actions-cell">
+                          <button
+                            className="admin-row-action admin-row-action--danger"
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              handleDeleteRegistration(item.registration)
+                            }}
+                          >
+                            {ui.deleteRegistration}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
