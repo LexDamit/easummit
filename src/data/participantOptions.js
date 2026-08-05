@@ -219,6 +219,22 @@ const getFlag = (countryCode) =>
     String.fromCodePoint(127397 + character.charCodeAt(0)),
   )
 
+export const getCountryFlag = (value) => {
+  if (!value || typeof value !== 'string') {
+    return ''
+  }
+
+  const normalized = value.trim().toUpperCase()
+
+  if (normalized.length === 2) {
+    return getFlag(normalized)
+  }
+
+  const match = countryEntries.find(([, code3]) => code3 === normalized)
+
+  return match ? getFlag(match[0]) : ''
+}
+
 export const getRoleOptions = (language) =>
   Object.entries(roleLabels[language] ?? roleLabels.en).map(([value, label]) => ({
     value,

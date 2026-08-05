@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  getCountryFlag,
   getCountryOptions,
   getCountryLabel,
   getFederationOptions,
@@ -56,16 +57,14 @@ const parseAmount = (value) => Number(value || 0)
 const getPaymentTone = (value) => {
   const status = String(value || '').toLowerCase()
 
-  if (isInvitedStatus(status)) {
-    return 'invited'
-  }
-
   if (
     status.includes('paid') ||
     status.includes('success') ||
     status.includes('complete') ||
     status.includes('confirmed') ||
-    status.includes('settled')
+    status.includes('settled') ||
+    status.includes('free') ||
+    isInvitedStatus(status)
   ) {
     return 'paid'
   }
@@ -670,6 +669,7 @@ function Admin({
             .join(' ')
             .trim(),
           participantEmail: participant.email || '',
+          countryCode: participant.country || '',
           countryLabel: getCountryLabel(participant.country, language),
           federationLabel: getFederationLabel(participant.memberFederation, language),
           roleLabel: getRoleLabel(participant.role, language),
@@ -774,6 +774,7 @@ function Admin({
           if (!accumulator[key]) {
             accumulator[key] = {
               country: key,
+              flag: getCountryFlag(item.countryCode),
               count: 0,
               variants: new Set(),
             }
@@ -1681,7 +1682,12 @@ function Admin({
                   <div className="admin-country-grid">
                     {countryOverview.map((item) => (
                       <div className="admin-country-card" key={item.country}>
-                        <strong>{item.country}</strong>
+                        <div className="admin-country-card__top">
+                          <span className="admin-country-card__flag" aria-hidden="true">
+                            {item.flag || '🌍'}
+                          </span>
+                          <strong>{item.country}</strong>
+                        </div>
                         <span>
                           {item.count === 1
                             ? ui.countryParticipantsSingle.replace('{count}', item.count)

@@ -1126,20 +1126,45 @@ textarea {
 
 .admin-country-card {
   display: grid;
-  gap: 0.3rem;
-  padding: 0.95rem 1rem;
+  gap: 0.45rem;
+  padding: 1rem 1.05rem;
   border: 1px solid rgba(16, 35, 58, 0.08);
-  border-radius: 16px;
-  background: #fff;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f9fbff);
+  box-shadow: 0 10px 24px rgba(16, 35, 58, 0.04);
+}
+
+.admin-country-card__top {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.admin-country-card__flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  background: #eef4ff;
+  font-size: 1.3rem;
+  box-shadow: inset 0 0 0 1px rgba(16, 35, 58, 0.06);
 }
 
 .admin-country-card strong {
   font-size: 1rem;
+  line-height: 1.2;
 }
 
 .admin-country-card span,
 .admin-country-card small {
   color: var(--muted);
+}
+
+.admin-country-card span {
+  font-weight: 700;
+  color: var(--accent-dark);
 }
 
 .admin-kpi-card {
