@@ -405,6 +405,11 @@ function Admin({
           markAsPaid: 'Marquer comme paye',
           markAsPending: 'Remettre en attente',
           markAsInvited: 'Marquer comme invite',
+          removePackage: 'Supprimer le package',
+          removePackageConfirm:
+            'Voulez-vous vraiment supprimer ce package ? Cette action sera enregistree a la prochaine sauvegarde.',
+          removeLastPackageBlocked:
+            'Au moins un package doit rester disponible sur cette page.',
           deleteRegistration: "Supprimer l'inscription",
           deleteRegistrationConfirm:
             "Voulez-vous vraiment supprimer cette inscription ? Cette action est definitive.",
@@ -542,6 +547,11 @@ function Admin({
           markAsPaid: 'Mark as paid',
           markAsPending: 'Mark as pending',
           markAsInvited: 'Mark as invited',
+          removePackage: 'Remove package',
+          removePackageConfirm:
+            'Do you really want to remove this package? This change will be saved the next time you save the catalog.',
+          removeLastPackageBlocked:
+            'At least one package must remain available on this page.',
           deleteRegistration: 'Delete registration',
           deleteRegistrationConfirm:
             'Do you really want to delete this registration? This action cannot be undone.',
@@ -922,6 +932,37 @@ function Admin({
         ),
       },
     }))
+  }
+
+  const removePackageOption = (variantIndex, packageId) => {
+    setCatalogDraft((current) => {
+      const variant = current.variants[variantIndex]
+
+      if (!variant) {
+        return current
+      }
+
+      if ((variant.packageOptions || []).length <= 1) {
+        setSaveMessage(ui.removeLastPackageBlocked)
+        return current
+      }
+
+      return {
+        ...current,
+        variants: current.variants.map((item, itemIndex) => {
+          if (itemIndex !== variantIndex) {
+            return item
+          }
+
+          return {
+            ...item,
+            packageOptions: (item.packageOptions || []).filter(
+              (option) => option.id !== packageId,
+            ),
+          }
+        }),
+      }
+    })
   }
 
   const updateHotelDraft = (hotelId, key, value) => {
@@ -1354,6 +1395,21 @@ function Admin({
                             }
                           />
                         </label>
+                        <div className="cta-row">
+                          <button
+                            className="button button--ghost"
+                            type="button"
+                            onClick={() => {
+                              if (!window.confirm(ui.removePackageConfirm)) {
+                                return
+                              }
+
+                              removePackageOption(index, option.id)
+                            }}
+                          >
+                            {ui.removePackage}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
