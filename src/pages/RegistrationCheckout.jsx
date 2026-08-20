@@ -74,6 +74,23 @@ const getAddonDescription = (packageType, addonId, t) => {
   return t.checkout.optionalAddon
 }
 
+const formatAvailabilityDate = (value) => {
+  const raw = String(value || '').trim()
+
+  if (!raw) {
+    return ''
+  }
+
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+
+  if (!match) {
+    return raw
+  }
+
+  const [, year, month, day] = match
+  return `${day}/${month}/${year}`
+}
+
 function ParticipantPathIcon({ count }) {
   if (count > 1) {
     return (
@@ -286,17 +303,17 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   }
 
   const getAddonAvailabilityCopy = (addon) => {
-    if (addon.availableFrom) {
-      return (t.checkout.availableFrom || 'Available from {date}').replace(
-        '{date}',
-        addon.availableFrom,
-      )
-    }
-
     if (addon.availableUntil) {
       return (t.checkout.availableUntil || 'Available until {date}').replace(
         '{date}',
-        addon.availableUntil,
+        formatAvailabilityDate(addon.availableUntil),
+      )
+    }
+
+    if (addon.availableFrom) {
+      return (t.checkout.availableFrom || 'Available from {date}').replace(
+        '{date}',
+        formatAvailabilityDate(addon.availableFrom),
       )
     }
 
@@ -489,20 +506,43 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
                       <strong>{addon.name}</strong>
                       <p>{getAddonDescription(packageType, addon.id, t)}</p>
                       {getAddonAvailabilityCopy(addon) ? (
-                        <p>{getAddonAvailabilityCopy(addon)}</p>
+                        <p
+                          className={
+                            addon.availableUntil
+                              ? 'selection-card__availability selection-card__availability--deadline'
+                              : 'selection-card__availability'
+                          }
+                        >
+                          {getAddonAvailabilityCopy(addon)}
+                        </p>
                       ) : null}
                     </div>
                     <span>EUR {addon.price}</span>
                   </button>
                 )
               })}
+              {hiddenExpiredHotelAddons.map((addon) => (
+                <div
+                  key={`${packageType}-${addon.id}-expired`}
+                  className="selection-card selection-card--disabled"
+                >
+                  <div>
+                    <strong>{addon.name}</strong>
+                    <p>{getAddonDescription(packageType, addon.id, t)}</p>
+                    {getAddonAvailabilityCopy(addon) ? (
+                      <p className="selection-card__availability selection-card__availability--deadline">
+                        {getAddonAvailabilityCopy(addon)}
+                      </p>
+                    ) : null}
+                    <p className="selection-card__availability selection-card__availability--deadline">
+                      {t.checkout.hotelAvailabilityClosed ||
+                        'Hotel stays are no longer available online. You can write to coaching-summit@fla.lu or book your own hotel.'}
+                    </p>
+                  </div>
+                  <span className="selection-card__price">EUR {addon.price}</span>
+                </div>
+              ))}
             </div>
-            {hiddenExpiredHotelAddons.length ? (
-              <p className="checkout-copy">
-                {t.checkout.hotelAvailabilityClosed ||
-                  'Hotel stays are no longer available online. You can write to coaching-summit@fla.lu or book your own hotel.'}
-              </p>
-            ) : null}
           </div>
 
           {participantSections.map((_, index) => {
