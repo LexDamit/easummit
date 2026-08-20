@@ -1,5 +1,10 @@
 import { useMemo, useRef, useState } from 'react'
 import {
+  filterAvailableAddons,
+  getCatalogToday,
+  isAddonCurrentlyAvailable,
+} from '../data/registrationCatalog'
+import {
   getCountryOptions,
   getFederationOptions,
   getRoleOptions,
@@ -208,9 +213,20 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
   const packageOptions = variant.packageOptions || []
   const selectedPackage =
     packageOptions.find((item) => item.id === packageType) || packageOptions[0]
+  const catalogToday = useMemo(() => getCatalogToday(), [])
   const activeAddons = useMemo(
-    () => addonsByPackage[packageType] || [],
-    [addonsByPackage, packageType],
+    () => filterAvailableAddons(addonsByPackage[packageType] || [], catalogToday),
+    [addonsByPackage, catalogToday, packageType],
+  )
+  const hiddenExpiredHotelAddons = useMemo(
+    () =>
+      (addonsByPackage[packageType] || []).filter(
+        (addon) =>
+          addon.id?.startsWith('hotel-') &&
+          addon.availableUntil &&
+          !isAddonCurrentlyAvailable(addon, catalogToday),
+      ),
+    [addonsByPackage, catalogToday, packageType],
   )
   const countryOptions = useMemo(() => getCountryOptions(language), [language])
   const federationOptions = useMemo(
@@ -267,6 +283,24 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
         ? current.filter((item) => item !== addonId)
         : [...current, addonId],
     )
+  }
+
+  const getAddonAvailabilityCopy = (addon) => {
+    if (addon.availableFrom) {
+      return (t.checkout.availableFrom || 'Available from {date}').replace(
+        '{date}',
+        addon.availableFrom,
+      )
+    }
+
+    if (addon.availableUntil) {
+      return (t.checkout.availableUntil || 'Available until {date}').replace(
+        '{date}',
+        addon.availableUntil,
+      )
+    }
+
+    return ''
   }
 
   const validateParticipant = (participant, index, nextErrors) => {
@@ -454,12 +488,21 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
                     <div>
                       <strong>{addon.name}</strong>
                       <p>{getAddonDescription(packageType, addon.id, t)}</p>
+                      {getAddonAvailabilityCopy(addon) ? (
+                        <p>{getAddonAvailabilityCopy(addon)}</p>
+                      ) : null}
                     </div>
                     <span>EUR {addon.price}</span>
                   </button>
                 )
               })}
             </div>
+            {hiddenExpiredHotelAddons.length ? (
+              <p className="checkout-copy">
+                {t.checkout.hotelAvailabilityClosed ||
+                  'Hotel stays are no longer available online. You can write to coaching-summit@fla.lu or book your own hotel.'}
+              </p>
+            ) : null}
           </div>
 
           {participantSections.map((_, index) => {

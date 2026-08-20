@@ -94,13 +94,40 @@ const loadTrustedCatalog = async () => {
   return value
 }
 
-const ensureAddon = (addons = [], addon) => {
-  if (addons.some((item) => item.id === addon.id)) {
-    return addons
+const normalizeAddon = (addon) => ({
+  ...addon,
+  availableFrom: addon?.availableFrom || '',
+  availableUntil: addon?.availableUntil || '',
+})
+
+const getCatalogToday = () => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+
+  return formatter.format(new Date())
+}
+
+const isAddonCurrentlyAvailable = (addon, currentDate = getCatalogToday()) => {
+  const availableFrom = String(addon?.availableFrom || '').trim()
+  const availableUntil = String(addon?.availableUntil || '').trim()
+
+  if (availableFrom && currentDate < availableFrom) {
+    return false
   }
 
-  return [...addons, addon]
+  if (availableUntil && currentDate > availableUntil) {
+    return false
+  }
+
+  return true
 }
+
+const filterAvailableAddons = (addons = [], currentDate = getCatalogToday()) =>
+  addons.map((addon) => normalizeAddon(addon)).filter((addon) => isAddonCurrentlyAvailable(addon, currentDate))
 
 const normalizeTrustedCatalog = (catalog) => {
   const variants = (catalog?.variants || []).map((variant) => {
@@ -120,22 +147,23 @@ const normalizeTrustedCatalog = (catalog) => {
   return {
     ...catalog,
     variants,
-    addonsByVariant: {
-      ...(catalog?.addonsByVariant || {}),
-      local: {
-        ...(catalog?.addonsByVariant?.local || {}),
-        single: ensureAddon(catalog?.addonsByVariant?.local?.single || [], {
-          id: 'lunches-coffee-breaks',
-          name: 'Lunches & Coffee Breaks',
-          price: 62,
-        }),
-        double: ensureAddon(catalog?.addonsByVariant?.local?.double || [], {
-          id: 'lunches-coffee-breaks',
-          name: 'Lunches & Coffee Breaks',
-          price: 124,
-        }),
-      },
-    },
+    addonsByPackage: Object.fromEntries(
+      Object.entries(catalog?.addonsByPackage || {}).map(([packageType, addons]) => [
+        packageType,
+        addons.map((addon) => normalizeAddon(addon)),
+      ]),
+    ),
+    addonsByVariant: Object.fromEntries(
+      Object.entries(catalog?.addonsByVariant || {}).map(([variantId, packageMap]) => [
+        variantId,
+        Object.fromEntries(
+          Object.entries(packageMap || {}).map(([packageType, addons]) => [
+            packageType,
+            addons.map((addon) => normalizeAddon(addon)),
+          ]),
+        ),
+      ]),
+    ),
   }
 }
 
@@ -225,10 +253,13 @@ exports.handler = async (event) => {
       }
     }
 
-    const availableAddons = [
-      ...(catalog.addonsByPackage?.[packageType] ?? []),
-      ...(catalog.addonsByVariant?.[variant.id]?.[packageType] ?? []),
-    ]
+    const availableAddons = filterAvailableAddons(
+      [
+        ...(catalog.addonsByPackage?.[packageType] ?? []),
+        ...(catalog.addonsByVariant?.[variant.id]?.[packageType] ?? []),
+      ],
+      getCatalogToday(),
+    )
     const addons = availableAddons.filter((item) => addonIds.includes(item.id))
     const totalAmount =
       Number(selectedPackage.price) +

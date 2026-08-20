@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { filterAvailableAddons, getCatalogToday } from '../data/registrationCatalog'
 import {
   getCountryFlag,
   getCountryOptions,
@@ -20,6 +21,15 @@ const initialParticipant = {
   role: '',
   gender: '',
 }
+
+const createAddonDraft = (overrides = {}) => ({
+  id: `addon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  name: '',
+  price: 0,
+  availableFrom: '',
+  availableUntil: '',
+  ...overrides,
+})
 
 const validateEmail = (value) => /\S+@\S+\.\S+/.test(value)
 
@@ -384,6 +394,15 @@ function Admin({
           detailsLabel: 'Details',
           profileSummaryLabel: 'Profil',
           registrationSummaryLabel: 'Options',
+          addAddon: 'Ajouter une option',
+          removeAddon: 'Supprimer l’option',
+          removeAddonConfirm:
+            'Voulez-vous vraiment supprimer cette option ? Cette action sera enregistree a la prochaine sauvegarde.',
+          globalAddonsTitle: 'Options globales',
+          variantAddonsTitle: 'Options specifiques',
+          availableFromLabel: 'Disponible a partir du',
+          availableUntilLabel: 'Disponible jusqu’au',
+          inactiveAddonNotice: 'Option actuellement inactive',
           addManualRegistration: 'Ajouter une inscription manuelle',
           hideManualRegistration: 'Masquer le formulaire',
           manualRegistrationTitle: 'Inscription manuelle',
@@ -526,6 +545,15 @@ function Admin({
           detailsLabel: 'Details',
           profileSummaryLabel: 'Profile',
           registrationSummaryLabel: 'Options',
+          addAddon: 'Add add-on',
+          removeAddon: 'Remove add-on',
+          removeAddonConfirm:
+            'Do you really want to remove this add-on? This change will be saved the next time you save the catalog.',
+          globalAddonsTitle: 'Global add-ons',
+          variantAddonsTitle: 'Variant-specific add-ons',
+          availableFromLabel: 'Available from',
+          availableUntilLabel: 'Available until',
+          inactiveAddonNotice: 'Add-on currently inactive',
           addManualRegistration: 'Add manual registration',
           hideManualRegistration: 'Hide form',
           manualRegistrationTitle: 'Manual registration',
@@ -654,6 +682,7 @@ function Admin({
   )
 
   const variantOptions = useMemo(() => catalog?.variants || [], [catalog])
+  const catalogToday = useMemo(() => getCatalogToday(), [])
   const manualVariant =
     variantOptions.find((item) => item.id === manualRegistration.variantId) || variantOptions[0]
   const manualPackageOptions = manualVariant?.packageOptions || []
@@ -669,8 +698,8 @@ function Admin({
     const variantAddons =
       catalog?.addonsByVariant?.[manualRegistration.variantId]?.[manualRegistration.packageType] || []
 
-    return [...variantAddons, ...baseAddons]
-  }, [catalog, manualRegistration.packageType, manualRegistration.variantId])
+    return filterAvailableAddons([...variantAddons, ...baseAddons], catalogToday)
+  }, [catalog, catalogToday, manualRegistration.packageType, manualRegistration.variantId])
 
   const participantRows = useMemo(
     () =>
@@ -934,6 +963,81 @@ function Admin({
     }))
   }
 
+  const addAddon = (packageType) => {
+    setCatalogDraft((current) => ({
+      ...current,
+      addonsByPackage: {
+        ...current.addonsByPackage,
+        [packageType]: [
+          ...(current.addonsByPackage?.[packageType] || []),
+          createAddonDraft(),
+        ],
+      },
+    }))
+  }
+
+  const removeAddon = (packageType, addonId) => {
+    setCatalogDraft((current) => ({
+      ...current,
+      addonsByPackage: {
+        ...current.addonsByPackage,
+        [packageType]: (current.addonsByPackage?.[packageType] || []).filter(
+          (item) => item.id !== addonId,
+        ),
+      },
+    }))
+  }
+
+  const updateVariantAddon = (variantId, packageType, addonId, key, value) => {
+    setCatalogDraft((current) => ({
+      ...current,
+      addonsByVariant: {
+        ...current.addonsByVariant,
+        [variantId]: {
+          ...(current.addonsByVariant?.[variantId] || {}),
+          [packageType]: (
+            current.addonsByVariant?.[variantId]?.[packageType] || []
+          ).map((item) =>
+            item.id === addonId
+              ? { ...item, [key]: key === 'price' ? Number(value) : value }
+              : item,
+          ),
+        },
+      },
+    }))
+  }
+
+  const addVariantAddon = (variantId, packageType) => {
+    setCatalogDraft((current) => ({
+      ...current,
+      addonsByVariant: {
+        ...current.addonsByVariant,
+        [variantId]: {
+          ...(current.addonsByVariant?.[variantId] || {}),
+          [packageType]: [
+            ...(current.addonsByVariant?.[variantId]?.[packageType] || []),
+            createAddonDraft(),
+          ],
+        },
+      },
+    }))
+  }
+
+  const removeVariantAddon = (variantId, packageType, addonId) => {
+    setCatalogDraft((current) => ({
+      ...current,
+      addonsByVariant: {
+        ...current.addonsByVariant,
+        [variantId]: {
+          ...(current.addonsByVariant?.[variantId] || {}),
+          [packageType]: (
+            current.addonsByVariant?.[variantId]?.[packageType] || []
+          ).filter((item) => item.id !== addonId),
+        },
+      },
+    }))
+  }
+
   const removePackageOption = (variantIndex, packageId) => {
     setCatalogDraft((current) => {
       const variant = current.variants[variantIndex]
@@ -961,6 +1065,14 @@ function Admin({
             ),
           }
         }),
+        addonsByVariant: {
+          ...(current.addonsByVariant || {}),
+          [variant.id]: Object.fromEntries(
+            Object.entries(current.addonsByVariant?.[variant.id] || {}).filter(
+              ([currentPackageId]) => currentPackageId !== packageId,
+            ),
+          ),
+        },
       }
     })
   }
@@ -1418,6 +1530,7 @@ function Admin({
 
               <div className="admin-subsection">
                 <h3>{t.admin.addons}</h3>
+                <h4>{ui.globalAddonsTitle}</h4>
                 {Object.entries(catalogDraft.addonsByPackage || {}).map(
                   ([packageType, addons]) => (
                     <div className="admin-editor-card" key={packageType}>
@@ -1426,6 +1539,15 @@ function Admin({
                           ? t.admin.basePackageDouble
                           : t.admin.basePackageSingle}
                       </h4>
+                      <div className="cta-row">
+                        <button
+                          className="button button--ghost"
+                          type="button"
+                          onClick={() => addAddon(packageType)}
+                        >
+                          {ui.addAddon}
+                        </button>
+                      </div>
                       {addons.map((item) => (
                         <div className="admin-editor-card" key={`${packageType}-${item.id}`}>
                           <label className="field">
@@ -1447,8 +1569,171 @@ function Admin({
                               }
                             />
                           </label>
+                          <label className="field">
+                            <span>{ui.availableFromLabel}</span>
+                            <input
+                              type="date"
+                              value={item.availableFrom || ''}
+                              onChange={(event) =>
+                                updateAddon(
+                                  packageType,
+                                  item.id,
+                                  'availableFrom',
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </label>
+                          <label className="field">
+                            <span>{ui.availableUntilLabel}</span>
+                            <input
+                              type="date"
+                              value={item.availableUntil || ''}
+                              onChange={(event) =>
+                                updateAddon(
+                                  packageType,
+                                  item.id,
+                                  'availableUntil',
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </label>
+                          {!filterAvailableAddons([item], catalogToday).length ? (
+                            <p className="checkout-copy">{ui.inactiveAddonNotice}</p>
+                          ) : null}
+                          <div className="cta-row">
+                            <button
+                              className="button button--ghost"
+                              type="button"
+                              onClick={() => {
+                                if (!window.confirm(ui.removeAddonConfirm)) {
+                                  return
+                                }
+
+                                removeAddon(packageType, item.id)
+                              }}
+                            >
+                              {ui.removeAddon}
+                            </button>
+                          </div>
                         </div>
                       ))}
+                    </div>
+                  ),
+                )}
+
+                <h4>{ui.variantAddonsTitle}</h4>
+                {catalogDraft.variants.map((variant) => (
+                  <div className="admin-editor-card" key={`variant-addon-${variant.id}`}>
+                    <h4>{variant.title}</h4>
+                    {(variant.packageOptions || []).map((option) => {
+                      const variantAddons =
+                        catalogDraft.addonsByVariant?.[variant.id]?.[option.id] || []
+
+                      return (
+                        <div className="admin-editor-card" key={`${variant.id}-${option.id}`}>
+                          <h4>{option.name}</h4>
+                          <div className="cta-row">
+                            <button
+                              className="button button--ghost"
+                              type="button"
+                              onClick={() => addVariantAddon(variant.id, option.id)}
+                            >
+                              {ui.addAddon}
+                            </button>
+                          </div>
+                          {variantAddons.map((item) => (
+                            <div
+                              className="admin-editor-card"
+                              key={`${variant.id}-${option.id}-${item.id}`}
+                            >
+                              <label className="field">
+                                <span>{t.admin.name}</span>
+                                <input
+                                  value={item.name}
+                                  onChange={(event) =>
+                                    updateVariantAddon(
+                                      variant.id,
+                                      option.id,
+                                      item.id,
+                                      'name',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="field">
+                                <span>{t.admin.price}</span>
+                                <input
+                                  type="number"
+                                  value={item.price}
+                                  onChange={(event) =>
+                                    updateVariantAddon(
+                                      variant.id,
+                                      option.id,
+                                      item.id,
+                                      'price',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="field">
+                                <span>{ui.availableFromLabel}</span>
+                                <input
+                                  type="date"
+                                  value={item.availableFrom || ''}
+                                  onChange={(event) =>
+                                    updateVariantAddon(
+                                      variant.id,
+                                      option.id,
+                                      item.id,
+                                      'availableFrom',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              <label className="field">
+                                <span>{ui.availableUntilLabel}</span>
+                                <input
+                                  type="date"
+                                  value={item.availableUntil || ''}
+                                  onChange={(event) =>
+                                    updateVariantAddon(
+                                      variant.id,
+                                      option.id,
+                                      item.id,
+                                      'availableUntil',
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </label>
+                              {!filterAvailableAddons([item], catalogToday).length ? (
+                                <p className="checkout-copy">{ui.inactiveAddonNotice}</p>
+                              ) : null}
+                              <div className="cta-row">
+                                <button
+                                  className="button button--ghost"
+                                  type="button"
+                                  onClick={() => {
+                                    if (!window.confirm(ui.removeAddonConfirm)) {
+                                      return
+                                    }
+
+                                    removeVariantAddon(variant.id, option.id, item.id)
+                                  }}
+                                >
+                                  {ui.removeAddon}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })}
                     </div>
                   ),
                 )}

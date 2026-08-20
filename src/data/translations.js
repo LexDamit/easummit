@@ -55,6 +55,10 @@ const uiTranslations = {
       continueToPayment: 'Continue to payment',
       preparingPayment: 'Preparing payment...',
       optionalAddon: 'Optional add-on',
+      availableFrom: 'Available from {date}',
+      availableUntil: 'Available until {date}',
+      hotelAvailabilityClosed:
+        'Hotel stays are no longer available online. You can write to coaching-summit@fla.lu or book your own hotel.',
       dinnerSingle: 'Includes 1 dinner place.',
       dinnerDouble: 'Includes 2 dinner places for both participants.',
       lunchCoffeeSingle: 'Includes lunches and coffee breaks for 1 participant.',
@@ -238,6 +242,10 @@ const uiTranslations = {
       continueToPayment: 'Continuer vers le paiement',
       preparingPayment: 'Préparation du paiement...',
       optionalAddon: 'Option supplémentaire',
+      availableFrom: 'Disponible à partir du {date}',
+      availableUntil: 'Disponible jusqu’au {date}',
+      hotelAvailabilityClosed:
+        'Les séjours hôtel ne sont plus disponibles en ligne. Vous pouvez écrire à coaching-summit@fla.lu ou réserver votre propre hôtel.',
       dinnerSingle: 'Comprend 1 place pour le dîner.',
       dinnerDouble: 'Comprend 2 places pour le dîner pour les deux participants.',
       lunchCoffeeSingle: 'Comprend les déjeuners et pauses café pour 1 participant.',

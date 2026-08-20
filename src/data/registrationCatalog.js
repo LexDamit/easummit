@@ -106,13 +106,42 @@ export const defaultRegistrationCatalog = {
   },
 }
 
-const ensureAddon = (addons = [], addon) => {
-  if (addons.some((item) => item.id === addon.id)) {
-    return addons
+const normalizeAddon = (addon) => ({
+  ...addon,
+  availableFrom: addon?.availableFrom || '',
+  availableUntil: addon?.availableUntil || '',
+})
+
+const normalizeAddonList = (addons = []) => addons.map((addon) => normalizeAddon(addon))
+
+export const getCatalogToday = () => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+
+  return formatter.format(new Date())
+}
+
+export const isAddonCurrentlyAvailable = (addon, currentDate = getCatalogToday()) => {
+  const availableFrom = String(addon?.availableFrom || '').trim()
+  const availableUntil = String(addon?.availableUntil || '').trim()
+
+  if (availableFrom && currentDate < availableFrom) {
+    return false
   }
 
-  return [...addons, addon]
+  if (availableUntil && currentDate > availableUntil) {
+    return false
+  }
+
+  return true
 }
+
+export const filterAvailableAddons = (addons = [], currentDate = getCatalogToday()) =>
+  normalizeAddonList(addons).filter((addon) => isAddonCurrentlyAvailable(addon, currentDate))
 
 export const normalizeRegistrationCatalog = (catalog) => {
   const source = catalog || defaultRegistrationCatalog
@@ -143,22 +172,24 @@ export const normalizeRegistrationCatalog = (catalog) => {
   return {
     ...source,
     variants,
-    addonsByPackage: globalAddons,
+    addonsByPackage: Object.fromEntries(
+      Object.entries(globalAddons).map(([packageType, addons]) => [
+        packageType,
+        normalizeAddonList(addons),
+      ]),
+    ),
     addonsByVariant: {
-      ...variantAddons,
-      local: {
-        ...(variantAddons.local || {}),
-        single: ensureAddon(variantAddons.local?.single || [], {
-          id: 'lunches-coffee-breaks',
-          name: 'Lunches & Coffee Breaks',
-          price: 62,
-        }),
-        double: ensureAddon(variantAddons.local?.double || [], {
-          id: 'lunches-coffee-breaks',
-          name: 'Lunches & Coffee Breaks',
-          price: 124,
-        }),
-      },
+      ...Object.fromEntries(
+        Object.entries(variantAddons).map(([variantId, packageMap]) => [
+          variantId,
+          Object.fromEntries(
+            Object.entries(packageMap || {}).map(([packageType, addons]) => [
+              packageType,
+              normalizeAddonList(addons),
+            ]),
+          ),
+        ]),
+      ),
     },
   }
 }
