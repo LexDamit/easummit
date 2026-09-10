@@ -1,6 +1,9 @@
 const { Timestamp } = require('firebase-admin/firestore')
 const { getAdminDb } = require('./_lib/firebase-admin')
 
+// Keep in sync with PUBLIC_REGISTRATION_OPEN in src/App.jsx.
+const PUBLIC_REGISTRATION_OPEN = false
+
 const getHostedCheckoutUrl = (payload) => {
   if (!payload || typeof payload !== 'object') {
     return null
@@ -208,6 +211,17 @@ const getWebhookBaseUrl = (event) => {
 }
 
 exports.handler = async (event) => {
+  if (!PUBLIC_REGISTRATION_OPEN) {
+    return {
+      statusCode: 403,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error:
+          'Registrations are currently closed because the EA Coaching Summit is fully booked. Please contact coaching-summit@fla.lu.',
+      }),
+    }
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,

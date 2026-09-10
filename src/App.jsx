@@ -29,6 +29,8 @@ import {
 } from './lib/firebase'
 
 const LANGUAGE_KEY = 'fla-registration-language'
+// Set to true when public registrations can reopen.
+const PUBLIC_REGISTRATION_OPEN = false
 
 const PAGE_PATHS = {
   local: '/local',
@@ -220,6 +222,7 @@ function App() {
           localizedCatalog.addonsByVariant?.[selectedVariant.id] ?? {},
         )}
         language={language}
+        registrationsOpen={PUBLIC_REGISTRATION_OPEN}
         variant={selectedVariant}
         t={t}
       />

@@ -26,6 +26,10 @@ const uiTranslations = {
       participantsIncluded: '{count} participant included',
       participantsIncludedPlural: '{count} participants included',
       packageHeroPrefix: 'Package Coaching Summit: ',
+      registrationClosedLabel: 'Fully booked',
+      registrationClosedTitle: 'Registrations are currently closed.',
+      registrationClosedCopy:
+        'The EA Coaching Summit is fully booked. Please contact coaching-summit@fla.lu for any questions.',
       conditionsLabel: 'Conditions',
       eligibilityLabel: 'Eligibility',
       includesLabel: 'Included in all packages',
@@ -213,6 +217,10 @@ const uiTranslations = {
       participantsIncluded: '{count} participant inclus',
       participantsIncludedPlural: '{count} participants inclus',
       packageHeroPrefix: 'Package Coaching Summit : ',
+      registrationClosedLabel: 'Complet',
+      registrationClosedTitle: 'Les inscriptions sont actuellement fermées.',
+      registrationClosedCopy:
+        'Le EA Coaching Summit affiche complet. Pour toute question, veuillez contacter coaching-summit@fla.lu.',
       conditionsLabel: 'Conditions',
       eligibilityLabel: 'Éligibilité',
       includesLabel: 'Inclus dans tous les packages',

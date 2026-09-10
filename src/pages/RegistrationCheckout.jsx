@@ -215,7 +215,13 @@ function SearchableSelect({
   )
 }
 
-function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
+function RegistrationCheckout({
+  addonsByPackage,
+  language,
+  registrationsOpen = true,
+  t,
+  variant,
+}) {
   const [packageType, setPackageType] = useState('single')
   const [participants, setParticipants] = useState([
     initialParticipant,
@@ -407,6 +413,28 @@ function RegistrationCheckout({ addonsByPackage, language, t, variant }) {
       submitLockRef.current = false
       setIsLoading(false)
     }
+  }
+
+  if (!registrationsOpen) {
+    return (
+      <div className="page">
+        <section className="checkout-hero shell-section">
+          <div className="checkout-hero__headline">
+            <span className="checkout-hero__eyebrow">{t.checkout.packageIntroLabel}</span>
+            <h1 className="checkout-title">{t.checkout.registrationClosedTitle}</h1>
+          </div>
+          <div className="registration-closed-card">
+            <span className="registration-closed-card__status">
+              {t.checkout.registrationClosedLabel}
+            </span>
+            <p>{t.checkout.registrationClosedCopy}</p>
+            <a className="button button--primary" href="mailto:coaching-summit@fla.lu">
+              coaching-summit@fla.lu
+            </a>
+          </div>
+        </section>
+      </div>
+    )
   }
 
   return (
