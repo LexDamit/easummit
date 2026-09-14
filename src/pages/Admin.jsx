@@ -280,7 +280,8 @@ const downloadRegistrationsWorkbook = (registrations, participantRows, ui) => {
 
   const participantSheetRows = participantRows.map((participant) => ({
     [ui.referenceLabel]: participant.bookingReference,
-    Participant: participant.participantName,
+    'First name': participant.firstName,
+    'Last name': participant.lastName,
     Email: participant.participantEmail,
     [ui.country]: participant.countryLabel,
     [ui.federation]: participant.federationLabel,
@@ -663,7 +664,8 @@ function Admin({
     participants: [{ ...initialParticipant }, { ...initialParticipant }],
   })
   const [filters, setFilters] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     profile: '',
     federationRole: '',
@@ -767,6 +769,8 @@ function Admin({
           registrationId: registration.id,
           bookingReference: registration.bookingReference || registration.id,
           participantIndex: index,
+          firstName: participant.firstName || '',
+          lastName: participant.lastName || '',
           participantName: [participant.firstName, participant.lastName]
             .filter(Boolean)
             .join(' ')
@@ -844,7 +848,8 @@ function Admin({
             }
 
             const haystackMap = {
-              name: [item.participantName, item.participantEmail, ...item.otherParticipants].join(' '),
+              firstName: item.firstName,
+              lastName: item.lastName,
               email: item.participantEmail,
               profile: item.profileSummary,
               federationRole: [item.federationLabel, item.roleLabel].filter(Boolean).join(' '),
@@ -1821,7 +1826,8 @@ function Admin({
                     className="button button--ghost"
                     onClick={() =>
                       setFilters({
-                        name: '',
+                        firstName: '',
+                        lastName: '',
                         email: '',
                         profile: '',
                         federationRole: '',
@@ -2126,7 +2132,8 @@ function Admin({
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>{ui.participantName}</th>
+                      <th>{t.checkout.firstName}</th>
+                      <th>{t.checkout.lastName}</th>
                       <th>{ui.participantEmail}</th>
                       <th>{ui.country}</th>
                       <th>{ui.federationRoleColumn}</th>
@@ -2140,7 +2147,8 @@ function Admin({
                     </tr>
                     <tr className="admin-table__filters">
                       {[
-                        'name',
+                        'firstName',
+                        'lastName',
                         'email',
                         'profile',
                         'federationRole',
@@ -2175,7 +2183,10 @@ function Admin({
                         onClick={() => setSelectedRegistrationKey(item.key)}
                       >
                         <td className="admin-table__participant-cell">
-                          <strong>{item.participantName || '—'}</strong>
+                          <strong>{item.firstName || '—'}</strong>
+                        </td>
+                        <td className="admin-table__participant-cell">
+                          <strong>{item.lastName || '—'}</strong>
                         </td>
                         <td className="admin-table__stack-cell">
                           {item.participantEmail || '—'}
