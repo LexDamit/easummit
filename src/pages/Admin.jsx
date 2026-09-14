@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import * as XLSX from 'xlsx'
 import { filterAvailableAddons, getCatalogToday } from '../data/registrationCatalog'
 import {
   getCountryFlag,
@@ -256,6 +257,54 @@ const downloadTextFile = (filename, content, mimeType) => {
   URL.revokeObjectURL(url)
 }
 
+const downloadRegistrationsWorkbook = (registrations, participantRows, ui) => {
+  const registrationSheetRows = registrations.map((registration) => ({
+    [ui.referenceLabel]: registration.bookingReference || registration.id,
+    [ui.page]: registration.variantName || '',
+    [ui.packageLabel]: registration.packageName || '',
+    [ui.paymentStatus]: getPaymentStatusDisplay(registration, ui),
+    [ui.paymentAmount]: registration.totalAmountNumber,
+    Currency: registration.currency || 'EUR',
+    [ui.registeredAt]: registration.registeredAtLabel,
+    [ui.paidAt]: registration.paidAtLabel,
+    'Participant count': registration.participants?.length || 1,
+    'Selected options': getRegistrationOptionItems(registration, ui)
+      .map((item) => formatAddonLine(item))
+      .join('; '),
+    'Hotel required': registrationNeedsHotel(registration) ? 'Yes' : 'No',
+    Hotel: registration.hotelName || registration.hotelId || '',
+    'Room type': registration.roomType || '',
+    'Room / note': registration.hotelRoom || '',
+    'Admin notes': registration.adminNotes || '',
+  }))
+
+  const participantSheetRows = participantRows.map((participant) => ({
+    [ui.referenceLabel]: participant.bookingReference,
+    Participant: participant.participantName,
+    Email: participant.participantEmail,
+    [ui.country]: participant.countryLabel,
+    [ui.federation]: participant.federationLabel,
+    [ui.role]: participant.roleLabel,
+    Gender: participant.genderLabel,
+    [ui.page]: participant.variantName || '',
+    [ui.packageLabel]: participant.packageName || '',
+    [ui.paymentStatus]: participant.paymentStatus,
+    [ui.paymentAmount]: participant.totalAmountNumber,
+    [ui.registeredAt]: participant.registeredAtLabel,
+    [ui.paidAt]: participant.paidAtLabel,
+    'Selected options': participant.selectedOptions.map((item) => formatAddonLine(item)).join('; '),
+  }))
+
+  const workbook = XLSX.utils.book_new()
+  const registrationsSheet = XLSX.utils.json_to_sheet(registrationSheetRows)
+  const participantsSheet = XLSX.utils.json_to_sheet(participantSheetRows)
+  registrationsSheet['!cols'] = Object.keys(registrationSheetRows[0] || {}).map(() => ({ wch: 22 }))
+  participantsSheet['!cols'] = Object.keys(participantSheetRows[0] || {}).map(() => ({ wch: 22 }))
+  XLSX.utils.book_append_sheet(workbook, registrationsSheet, 'Registrations')
+  XLSX.utils.book_append_sheet(workbook, participantsSheet, 'Participants')
+  XLSX.writeFile(workbook, 'coaching-summit-registrations.xlsx')
+}
+
 const createEmptyHotel = () => ({
   id: `hotel-${Date.now()}`,
   name: '',
@@ -326,6 +375,7 @@ function Admin({
           selectAll: 'Select all',
           downloadProofs: 'Download payment proofs',
           downloadCsv: 'Download CSV',
+          downloadXlsx: 'Download XLSX',
           totalCollected: 'Collected',
           totalBooked: 'Booked',
           totalPending: 'Pending',
@@ -361,6 +411,7 @@ function Admin({
           doubleLabel: 'Double',
           amountTaken: 'Amount taken',
           profileColumn: 'Profil',
+          federationRoleColumn: 'Federation / role',
           registrationColumn: 'Reservation',
           noAddonsSelected: 'Aucune option selectionnee',
           selectedOptions: 'Options choisies',
@@ -477,6 +528,7 @@ function Admin({
           selectAll: 'Select all',
           downloadProofs: 'Download payment proofs',
           downloadCsv: 'Download CSV',
+          downloadXlsx: 'Download XLSX',
           totalCollected: 'Collected',
           totalBooked: 'Booked',
           totalPending: 'Pending',
@@ -512,6 +564,7 @@ function Admin({
           doubleLabel: 'Double',
           amountTaken: 'Amount taken',
           profileColumn: 'Profile',
+          federationRoleColumn: 'Federation / role',
           registrationColumn: 'Registration',
           noAddonsSelected: 'No add-ons selected',
           selectedOptions: 'Selected options',
@@ -613,6 +666,7 @@ function Admin({
     name: '',
     email: '',
     profile: '',
+    federationRole: '',
     registration: '',
     paymentStatus: '',
     bookingReference: '',
@@ -793,6 +847,7 @@ function Admin({
               name: [item.participantName, item.participantEmail, ...item.otherParticipants].join(' '),
               email: item.participantEmail,
               profile: item.profileSummary,
+              federationRole: [item.federationLabel, item.roleLabel].filter(Boolean).join(' '),
               registration: item.registrationSummary,
               paymentStatus: item.paymentStatus,
               bookingReference: item.bookingReference,
@@ -1354,6 +1409,10 @@ function Admin({
     downloadTextFile('transactions.csv', csv, 'text/csv;charset=utf-8')
   }
 
+  const handleDownloadRegistrationsXlsx = () => {
+    downloadRegistrationsWorkbook(adminRegistrations, participantRows, ui)
+  }
+
   if (!firebaseEnabled) {
     return (
       <div className="page">
@@ -1765,6 +1824,7 @@ function Admin({
                         name: '',
                         email: '',
                         profile: '',
+                        federationRole: '',
                         registration: '',
                         paymentStatus: '',
                         bookingReference: '',
@@ -1773,6 +1833,13 @@ function Admin({
                     type="button"
                   >
                     {ui.clearFilters}
+                  </button>
+                  <button
+                    className="button button--primary"
+                    onClick={handleDownloadRegistrationsXlsx}
+                    type="button"
+                  >
+                    {ui.downloadXlsx}
                   </button>
                 </div>
               </div>
@@ -2061,7 +2128,8 @@ function Admin({
                     <tr>
                       <th>{ui.participantName}</th>
                       <th>{ui.participantEmail}</th>
-                      <th>{ui.profileColumn}</th>
+                      <th>{ui.country}</th>
+                      <th>{ui.federationRoleColumn}</th>
                       <th>{ui.registrationColumn}</th>
                       <th>{ui.referenceLabel}</th>
                       <th>{ui.paymentStatus}</th>
@@ -2075,6 +2143,7 @@ function Admin({
                         'name',
                         'email',
                         'profile',
+                        'federationRole',
                         'registration',
                         'bookingReference',
                         'paymentStatus',
@@ -2095,6 +2164,7 @@ function Admin({
                       <th />
                       <th />
                       <th />
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
@@ -2112,22 +2182,10 @@ function Admin({
                         </td>
                         <td className="admin-table__stack-cell">
                           <strong>{item.countryLabel || '-'}</strong>
-                          <details
-                            className="admin-inline-details"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <summary>{ui.detailsLabel}</summary>
-                            <div className="admin-inline-details__body">
-                              <span className="admin-inline-details__label">
-                                {ui.profileSummaryLabel}
-                              </span>
-                              <span>{item.federationLabel || '-'}</span>
-                              <span>
-                                {[item.roleLabel, item.genderLabel].filter(Boolean).join(' / ') || '-'}
-                              </span>
-                              <span>{item.participantEmail || '-'}</span>
-                            </div>
-                          </details>
+                        </td>
+                        <td className="admin-table__stack-cell">
+                          <strong>{item.federationLabel || '-'}</strong>
+                          <span>{item.roleLabel || '-'}</span>
                         </td>
                         <td className="admin-table__stack-cell admin-table__stack-cell--wide">
                           <strong>{item.packageName || '-'}</strong>
