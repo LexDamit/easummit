@@ -418,19 +418,24 @@ function RegistrationCheckout({
   if (!registrationsOpen) {
     return (
       <div className="page">
-        <section className="checkout-hero shell-section">
-          <div className="checkout-hero__headline">
-            <span className="checkout-hero__eyebrow">{t.checkout.packageIntroLabel}</span>
-            <h1 className="checkout-title">{t.checkout.registrationClosedTitle}</h1>
-          </div>
-          <div className="registration-closed-card">
-            <span className="registration-closed-card__status">
-              {t.checkout.registrationClosedLabel}
-            </span>
-            <p>{t.checkout.registrationClosedCopy}</p>
-            <a className="button button--primary" href="mailto:coaching-summit@fla.lu">
-              coaching-summit@fla.lu
-            </a>
+        <section className="registration-closed shell-section">
+          <div className="registration-closed__surface">
+            <div className="registration-closed__header">
+              <span>EA Coaching Summit 2026</span>
+              <span className="registration-closed__status">
+                <i aria-hidden="true" />
+                {t.checkout.registrationClosedLabel}
+              </span>
+            </div>
+            <div className="registration-closed__content">
+              <p className="registration-closed__kicker">{t.checkout.registrationClosedKicker}</p>
+              <h1>{t.checkout.registrationClosedTitle}</h1>
+              <p className="registration-closed__copy">{t.checkout.registrationClosedCopy}</p>
+              <a className="registration-closed__contact" href="mailto:coaching-summit@fla.lu">
+                <span>{t.checkout.registrationClosedContact}</span>
+                <strong>coaching-summit@fla.lu</strong>
+              </a>
+            </div>
           </div>
         </section>
       </div>

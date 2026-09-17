@@ -330,40 +330,140 @@ textarea {
   background: linear-gradient(180deg, #ffffff, rgba(23, 87, 166, 0.05));
 }
 
-.registration-closed-card {
-  display: grid;
-  justify-items: start;
-  gap: 1.1rem;
-  max-width: 48rem;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
-  border: 1px solid rgba(216, 44, 58, 0.18);
-  border-radius: var(--radius-xl);
-  background:
-    radial-gradient(circle at top right, rgba(216, 44, 58, 0.1), transparent 42%),
-    #fff;
-  box-shadow: var(--shadow);
+.registration-closed {
+  padding-top: clamp(1.5rem, 5vw, 4rem);
 }
 
-.registration-closed-card__status {
-  display: inline-flex;
-  min-height: 34px;
+.registration-closed__surface {
+  position: relative;
+  min-height: min(62vh, 600px);
+  overflow: hidden;
+  padding: clamp(1.4rem, 4vw, 3.4rem);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 100%),
+    radial-gradient(circle at 84% 72%, rgba(216, 44, 58, 0.95) 0 13%, transparent 13.3%),
+    radial-gradient(circle at 92% 22%, rgba(50, 111, 185, 0.8) 0 18%, transparent 18.3%),
+    linear-gradient(125deg, #071b34 0%, #0d315b 58%, #0a2445 100%);
+  background-size: 22px 22px, auto, auto, auto;
+  box-shadow: 0 25px 60px rgba(16, 35, 58, 0.2);
+  color: #fff;
+}
+
+.registration-closed__surface::after {
+  content: "";
+  position: absolute;
+  right: -9%;
+  bottom: -16%;
+  width: min(34vw, 390px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+}
+
+.registration-closed__header,
+.registration-closed__status,
+.registration-closed__contact {
+  display: flex;
   align-items: center;
-  padding: 0.45rem 0.8rem;
-  border-radius: 999px;
-  background: rgba(216, 44, 58, 0.1);
-  color: var(--danger);
-  font-size: 0.78rem;
+}
+
+.registration-closed__header {
+  position: relative;
+  z-index: 1;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.registration-closed-card p {
-  max-width: 42rem;
+.registration-closed__status {
+  gap: 0.48rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: #fff;
+}
+
+.registration-closed__status i {
+  display: block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #ff5865;
+  box-shadow: 0 0 0 4px rgba(255, 88, 101, 0.16);
+}
+
+.registration-closed__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.4rem;
+  align-content: center;
+  min-height: min(52vh, 500px);
+  max-width: 45rem;
+}
+
+.registration-closed__kicker {
   margin: 0;
-  color: var(--muted);
-  font-size: 1.08rem;
-  line-height: 1.7;
+  color: #9cc9ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.registration-closed h1 {
+  max-width: 11ch;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 850;
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+}
+
+.registration-closed__copy {
+  max-width: 38rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  line-height: 1.65;
+}
+
+.registration-closed__contact {
+  width: fit-content;
+  gap: 1.15rem;
+  padding: 0.9rem 1rem 0.9rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  transition: background-color var(--transition), transform var(--transition);
+}
+
+.registration-closed__contact:hover {
+  background: #fff;
+  color: var(--accent-dark);
+  transform: translateY(-2px);
+}
+
+.registration-closed__contact span {
+  color: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.registration-closed__contact strong {
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.registration-closed__contact:hover strong {
+  color: var(--accent-dark);
 }
 
 .checkout-conditions-label {
@@ -1578,6 +1678,26 @@ textarea {
   .ticket-success-layout,
   .ticket-card {
     grid-template-columns: 1fr;
+  }
+
+  .registration-closed__surface {
+    min-height: 520px;
+    padding: 1.4rem;
+  }
+
+  .registration-closed__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .registration-closed__content {
+    min-height: 390px;
+  }
+
+  .registration-closed__contact {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
   }
 
   .ticket-summary-row {
