@@ -431,10 +431,6 @@ function RegistrationCheckout({
               <p className="registration-closed__kicker">{t.checkout.registrationClosedKicker}</p>
               <h1>{t.checkout.registrationClosedTitle}</h1>
               <p className="registration-closed__copy">{t.checkout.registrationClosedCopy}</p>
-              <a className="registration-closed__contact" href="mailto:coaching-summit@fla.lu">
-                <span>{t.checkout.registrationClosedContact}</span>
-                <strong>coaching-summit@fla.lu</strong>
-              </a>
             </div>
           </div>
         </section>

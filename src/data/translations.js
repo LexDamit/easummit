@@ -30,8 +30,7 @@ const uiTranslations = {
       registrationClosedKicker: 'Registration update',
       registrationClosedTitle: 'The summit is fully booked.',
       registrationClosedCopy:
-        'Thank you for the exceptional interest in the EA Coaching Summit. We have reached full capacity and can no longer accept registrations. For any questions, please contact coaching-summit@fla.lu.',
-      registrationClosedContact: 'Contact the coaching summit team',
+        'Thank you for the exceptional interest in the EA Coaching Summit. We have reached full capacity and can no longer accept registrations.',
       conditionsLabel: 'Conditions',
       eligibilityLabel: 'Eligibility',
       includesLabel: 'Included in all packages',
@@ -223,8 +222,7 @@ const uiTranslations = {
       registrationClosedKicker: 'Information inscription',
       registrationClosedTitle: 'Le summit affiche complet.',
       registrationClosedCopy:
-        'Merci pour votre vif interet pour le EA Coaching Summit. Nous avons atteint notre capacite maximale et ne pouvons plus accepter de nouvelles inscriptions. Pour toute question, veuillez contacter coaching-summit@fla.lu.',
-      registrationClosedContact: 'Contacter l’équipe Coaching Summit',
+        'Merci pour votre vif interet pour le EA Coaching Summit. Nous avons atteint notre capacite maximale et ne pouvons plus accepter de nouvelles inscriptions.',
       conditionsLabel: 'Conditions',
       eligibilityLabel: 'Éligibilité',
       includesLabel: 'Inclus dans tous les packages',
